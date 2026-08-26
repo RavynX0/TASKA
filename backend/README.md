@@ -62,14 +62,14 @@ npm start        # production mode
 npm run dev      # auto-restart on file changes (nodemon)
 ```
 
-The server listens on `PORT` (default `3000`).
+The server listens on `PORT` (default `4310`).
 
 ## Environment variables
 
 | Variable | Required | Default | Notes |
 |---|---|---|---|
 | `NODE_ENV` | No | `development` | `test` loads `.env.test` instead of `.env` |
-| `PORT` | No | `3000` | |
+| `PORT` | No | `4310` | |
 | `CORS_ORIGIN` | No | `*` | Set to your frontend's origin in production |
 | `PGHOST` | Yes | — | |
 | `PGPORT` | No | `5432` | |
@@ -135,7 +135,7 @@ All responses are JSON. Errors look like:
 **Register example**
 
 ```bash
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:4310/auth/register \
   -H "Content-Type: application/json" \
   -d '{"name":"Alice","email":"alice@example.com","password":"password123"}'
 ```
@@ -151,20 +151,25 @@ curl -X POST http://localhost:3000/auth/register \
 
 | Method | Path | Body | Description |
 |---|---|---|---|
-| POST | `/tasks` | `{ title, description?, status?, priority?, dueDate? }` | Create a task |
+| POST | `/tasks` | `{ title, description?, status?, priority?, dueDate?, startTime?, reminderMinutes? }` | Create a task |
 | GET | `/tasks` | — | List the current user's tasks. Query params: `status`, `priority`, `search` |
 | GET | `/tasks/:id` | — | Get one task |
-| PUT`/`PATCH | `/tasks/:id` | any subset of `{ title, description, status, priority, dueDate }` | Update a task |
+| PUT`/`PATCH | `/tasks/:id` | any subset of `{ title, description, status, priority, dueDate, startTime, reminderMinutes }` | Update a task |
 | PATCH | `/tasks/:id/status` | `{ status }` | Change only the status (e.g. mark completed) |
 | DELETE | `/tasks/:id` | — | Delete a task (`204 No Content`) |
 
 Valid `status` values: `pending`, `in_progress`, `completed`.
 Valid `priority` values: `low`, `medium`, `high`.
+Valid `reminderMinutes` values: `0, 5, 10, 15, 30, 60` (minutes before `startTime`), or `null` for no reminder.
+
+`startTime` is when the task is scheduled to begin (used for reminders); `dueDate` is the
+deadline. They're independent — a task can have either, both, or neither. If `startTime` is
+set and `reminderMinutes` is omitted, it defaults to `10`.
 
 **Create task example**
 
 ```bash
-curl -X POST http://localhost:3000/tasks \
+curl -X POST http://localhost:4310/tasks \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"title":"Write report","priority":"high"}'
@@ -173,11 +178,27 @@ curl -X POST http://localhost:3000/tasks \
 **Mark a task completed**
 
 ```bash
-curl -X PATCH http://localhost:3000/tasks/1/status \
+curl -X PATCH http://localhost:4310/tasks/1/status \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"status":"completed"}'
 ```
+
+### Push notifications
+
+Web Push, so reminders arrive even when Taska isn't open in a browser tab.
+
+| Method | Path | Auth | Body | Description |
+|---|---|---|---|---|
+| GET | `/push/vapid-public-key` | No | — | Returns `{ publicKey }` for `pushManager.subscribe` |
+| POST | `/push/subscribe` | Yes | `{ endpoint, keys: { p256dh, auth } }` | Save a browser's push subscription (the object from `PushSubscription.toJSON()`) |
+| DELETE | `/push/subscribe` | Yes | `{ endpoint }` | Remove a subscription |
+
+A background job (`src/jobs/reminderScheduler.js`) polls every 30s for tasks whose
+`start_time - reminder_minutes` has arrived, and sends a push to every subscription
+the task's owner has registered, across all their devices/browsers. Requires
+`VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` to be set (see `.env.example`) - without them,
+the scheduler logs a warning and stays off, but the rest of the API still works.
 
 ### Status codes
 
@@ -195,7 +216,8 @@ curl -X PATCH http://localhost:3000/tasks/1/status \
 ## Database schema
 
 - `users`: `id, name, email (unique), password_hash, created_at, updated_at`
-- `tasks`: `id, user_id (FK -> users.id, ON DELETE CASCADE), title, description, status, priority, due_date, created_at, updated_at`
+- `tasks`: `id, user_id (FK -> users.id, ON DELETE CASCADE), title, description, status, priority, due_date, start_time, reminder_minutes, reminder_sent_at, created_at, updated_at`
+- `push_subscriptions`: `id, user_id (FK -> users.id, ON DELETE CASCADE), endpoint (unique), p256dh, auth, created_at`
 
 Migrations live in `src/db/migrations/` as plain SQL files, tracked in a
 `schema_migrations` table so `npm run migrate` only applies what's new.

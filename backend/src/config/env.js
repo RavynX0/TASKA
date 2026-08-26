@@ -25,4 +25,9 @@ module.exports = {
     password: required("PGPASSWORD"),
     database: required("PGDATABASE"),
   },
+  vapid: {
+    publicKey: process.env.VAPID_PUBLIC_KEY || null,
+    privateKey: process.env.VAPID_PRIVATE_KEY || null,
+    subject: process.env.VAPID_SUBJECT || "mailto:example@example.com",
+  },
 };

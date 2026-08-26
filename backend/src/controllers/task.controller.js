@@ -3,7 +3,7 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 
 const createTask = asyncHandler(async (req, res) => {
-  const { title, description, status, priority, dueDate } = req.body;
+  const { title, description, status, priority, dueDate, startTime, reminderMinutes } = req.body;
 
   const task = await taskModel.createTask({
     userId: req.user.id,
@@ -12,6 +12,8 @@ const createTask = asyncHandler(async (req, res) => {
     status,
     priority,
     dueDate,
+    startTime,
+    reminderMinutes,
   });
 
   res.status(201).json({ task });
@@ -32,12 +34,21 @@ const getTask = asyncHandler(async (req, res) => {
 });
 
 const updateTask = asyncHandler(async (req, res) => {
-  const { title, description, status, priority, dueDate } = req.body;
+  const { title, description, status, priority, dueDate, startTime, reminderMinutes } = req.body;
 
   const existing = await taskModel.findByIdForUser(req.params.id, req.user.id);
   if (!existing) {
     throw new AppError(404, "Task not found");
   }
+
+  // Setting a start time with no explicit reminder gets the default lead time.
+  const resolvedReminder =
+    startTime !== undefined && startTime !== null && reminderMinutes === undefined
+      ? 10
+      : reminderMinutes;
+
+  // Rescheduling clears any already-sent flag so the reminder can fire again for the new time.
+  const reschedule = startTime !== undefined || reminderMinutes !== undefined;
 
   const task = await taskModel.updateForUser(req.params.id, req.user.id, {
     title: title !== undefined ? title.trim() : undefined,
@@ -45,6 +56,9 @@ const updateTask = asyncHandler(async (req, res) => {
     status,
     priority,
     due_date: dueDate,
+    start_time: startTime,
+    reminder_minutes: resolvedReminder,
+    reminder_sent_at: reschedule ? null : undefined,
   });
 
   res.status(200).json({ task });

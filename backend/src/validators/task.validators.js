@@ -2,6 +2,7 @@ const AppError = require("../utils/AppError");
 
 const STATUS_VALUES = ["pending", "in_progress", "completed"];
 const PRIORITY_VALUES = ["low", "medium", "high"];
+const REMINDER_MINUTES_VALUES = [0, 5, 10, 15, 30, 60];
 
 function isValidDate(value) {
   return !Number.isNaN(new Date(value).getTime());
@@ -16,7 +17,8 @@ function validateId(req, res, next) {
 }
 
 function validateCreateTask(req, res, next) {
-  const { title, description, status, priority, dueDate } = req.body || {};
+  const { title, description, status, priority, dueDate, startTime, reminderMinutes } =
+    req.body || {};
   const errors = [];
 
   if (!title || typeof title !== "string" || title.trim().length === 0) {
@@ -41,6 +43,18 @@ function validateCreateTask(req, res, next) {
     errors.push("dueDate must be a valid date");
   }
 
+  if (startTime !== undefined && startTime !== null && !isValidDate(startTime)) {
+    errors.push("startTime must be a valid date");
+  }
+
+  if (
+    reminderMinutes !== undefined &&
+    reminderMinutes !== null &&
+    !REMINDER_MINUTES_VALUES.includes(reminderMinutes)
+  ) {
+    errors.push(`reminderMinutes must be one of: ${REMINDER_MINUTES_VALUES.join(", ")}`);
+  }
+
   if (errors.length > 0) {
     return next(new AppError(400, "Validation failed", errors));
   }
@@ -48,7 +62,8 @@ function validateCreateTask(req, res, next) {
 }
 
 function validateUpdateTask(req, res, next) {
-  const { title, description, status, priority, dueDate } = req.body || {};
+  const { title, description, status, priority, dueDate, startTime, reminderMinutes } =
+    req.body || {};
   const errors = [];
 
   if (title !== undefined && (typeof title !== "string" || title.trim().length === 0)) {
@@ -68,6 +83,16 @@ function validateUpdateTask(req, res, next) {
   }
   if (dueDate !== undefined && dueDate !== null && !isValidDate(dueDate)) {
     errors.push("dueDate must be a valid date");
+  }
+  if (startTime !== undefined && startTime !== null && !isValidDate(startTime)) {
+    errors.push("startTime must be a valid date");
+  }
+  if (
+    reminderMinutes !== undefined &&
+    reminderMinutes !== null &&
+    !REMINDER_MINUTES_VALUES.includes(reminderMinutes)
+  ) {
+    errors.push(`reminderMinutes must be one of: ${REMINDER_MINUTES_VALUES.join(", ")}`);
   }
 
   if (Object.keys(req.body || {}).length === 0) {
@@ -113,4 +138,5 @@ module.exports = {
   validateListQuery,
   STATUS_VALUES,
   PRIORITY_VALUES,
+  REMINDER_MINUTES_VALUES,
 };
