@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+
+  --color-canvas: #fdf1ea;
+  --color-surface: #ffffff;
+  --color-surface-dark: #1c1a19;
+
+  --color-primary: #f0632c;
+  --color-primary-hover: #dd5420;
+  --color-primary-soft: #fde7dc;
+
+  --color-ink: #1a1a1a;
+  --color-ink-muted: #6b655f;
+  --color-ink-faint: #9c9690;
+
+  --color-border-soft: #f0e4dc;
+
+  --radius-card: 1.25rem;
+  --radius-control: 0.75rem;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}

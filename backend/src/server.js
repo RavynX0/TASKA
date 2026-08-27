@@ -1,23 +1,8 @@
-const express = require("express");
-const app = express();
-app.use(express.json());
-const port = 3000;
+const app = require("./app");
+const config = require("./config/env");
+const { startReminderScheduler } = require("./jobs/reminderScheduler");
 
-app.get("/health", (req, res) => {
-  res.json({
-    message: "TASKA API is running",
-  });
-});
-
-app.post("/tasks", (req, res) => {
-  console.log(req.body);
-
-  res.status(201).json({
-    message: "TASKA TEST 123",
-    task: req.body,
-  });
-});
-
-app.listen(port, () => {
-  console.log(`TASKA Server is running on http://localhost:${port}`);
+app.listen(config.port, () => {
+  console.log(`TASKA Server is running on http://localhost:${config.port}`);
+  startReminderScheduler();
 });
