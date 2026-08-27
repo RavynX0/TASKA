@@ -4,14 +4,9 @@ import { useTasks } from "../context/TasksContext";
 import { PageLoader } from "../components/ui/Spinner";
 import ErrorBanner from "../components/ui/ErrorBanner";
 import Button from "../components/ui/Button";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  BellIcon,
-  SettingsIcon,
-  ClockIcon,
-} from "../components/icons";
+import { ChevronLeftIcon, ChevronRightIcon, BellIcon, ClockIcon } from "../components/icons";
 import { formatTime, isSameDay } from "../utils/date";
+import { STATUS_LABEL } from "../utils/status";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -67,13 +62,6 @@ export default function CalendarPage() {
             title="Reminders"
           >
             <BellIcon size={18} />
-          </Link>
-          <Link
-            to="/profile"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-ink-muted shadow-sm hover:text-primary"
-            title="Settings"
-          >
-            <SettingsIcon size={18} />
           </Link>
         </div>
       </div>
@@ -192,7 +180,7 @@ export default function CalendarPage() {
                     </p>
                     <p className="text-sm font-semibold text-ink">{task.title}</p>
                     <span className="mt-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium capitalize text-ink-muted">
-                      {task.status.replace("_", " ")}
+                      {STATUS_LABEL[task.status] || task.status}
                     </span>
                   </button>
                 </li>

@@ -1,11 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import GuestRoute from "./routes/GuestRoute";
 import AppLayout from "./components/layout/AppLayout";
 import LandingPage from "./pages/LandingPage";
-import SignUp from "./pages/SignUp";
-import SignIn from "./pages/SignIn";
+import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Reminders from "./pages/Reminders";
@@ -13,10 +12,23 @@ import CalendarPage from "./pages/CalendarPage";
 import PlanMyDay from "./pages/PlanMyDay";
 import Profile from "./pages/Profile";
 
-export default function App() {
+// AuthPage (the Sign Up / Sign In flip card) is rendered here, outside the
+// <Routes> switch, so navigating between /signup and /login never unmounts
+// it - only the URL and the flip's target angle change. The two paths still
+// need a match inside <Routes> (as no-ops) so the catch-all route doesn't
+// redirect them away.
+function AppShell() {
+  const location = useLocation();
+  const isAuthRoute = location.pathname === "/signup" || location.pathname === "/login";
+
   return (
-    <BrowserRouter>
-      <AuthProvider>
+    <>
+      {isAuthRoute && (
+        <GuestRoute>
+          <AuthPage />
+        </GuestRoute>
+      )}
+      <div style={isAuthRoute ? { display: "none" } : undefined}>
         <Routes>
           <Route
             path="/"
@@ -26,22 +38,8 @@ export default function App() {
               </GuestRoute>
             }
           />
-          <Route
-            path="/signup"
-            element={
-              <GuestRoute>
-                <SignUp />
-              </GuestRoute>
-            }
-          />
-          <Route
-            path="/login"
-            element={
-              <GuestRoute>
-                <SignIn />
-              </GuestRoute>
-            }
-          />
+          <Route path="/signup" element={null} />
+          <Route path="/login" element={null} />
 
           <Route
             element={
@@ -60,6 +58,16 @@ export default function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+      </div>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppShell />
       </AuthProvider>
     </BrowserRouter>
   );

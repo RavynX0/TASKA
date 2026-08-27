@@ -1,69 +1,104 @@
 import { Link } from "react-router-dom";
 import Button from "../components/ui/Button";
-import AppPreview from "../components/landing/AppPreview";
-import { ArrowRightIcon, PencilIcon, TasksIcon, BellIcon } from "../components/icons";
+import Logo from "../components/Logo";
+import { ArrowRightIcon, PencilIcon, TasksIcon, BellIcon, ChevronDownIcon } from "../components/icons";
 
 const FEATURES = [
   {
     icon: PencilIcon,
     title: "Capture Instantly",
-    description: "Quickly log ideas and to-dos before they slip away. Our frictionless entry means nothing gets lost.",
+    description:
+      "Quickly log ideas and to-dos before they slip away. Our frictionless entry means nothing gets lost.",
   },
   {
     icon: TasksIcon,
     title: "Organize Effortlessly",
-    description: "Group tasks, add priorities, and set due dates. A clear layout keeps your focus sharp.",
+    description:
+      "Group tasks into projects, add tags, and set priorities. The intuitive bento grid layout keeps your focus sharp.",
   },
   {
     icon: BellIcon,
     title: "Gentle Reminders",
-    description: "Get notified only when it matters, so you can maintain your flow state without annoying interruptions.",
+    description:
+      "Get notified only when it matters. Customize your alert schedule to maintain your flow state without annoying interruptions.",
   },
 ];
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <div>
-          <p className="text-xl font-extrabold text-primary">Taska</p>
-          <p className="-mt-1 text-xs text-ink-muted">Productivity, simplified.</p>
+    <div className="bg-canvas">
+      {/* Hero fills the viewport; everything else is revealed on scroll. */}
+      <section className="relative flex min-h-screen flex-col">
+        <div className="sticky top-4 z-30 px-4 lg:px-8">
+          <header className="mx-auto flex w-full max-w-5xl items-center justify-between rounded-full border border-white/60 bg-white/50 px-5 py-3 shadow-lg shadow-black/[0.04] backdrop-blur-xl backdrop-saturate-150 lg:px-7">
+            <Logo size={32} nameClassName="text-lg font-extrabold text-primary" />
+            <div className="flex items-center gap-5">
+              <Link to="/login" className="text-sm font-medium text-ink hover:text-primary">
+                Log in
+              </Link>
+              <Link to="/signup">
+                <Button size="sm">Get Started</Button>
+              </Link>
+            </div>
+          </header>
         </div>
-        <div className="flex items-center gap-5">
-          <Link to="/login" className="text-sm font-medium text-ink hover:text-primary">
-            Log in
-          </Link>
-          <Link to="/signup">
-            <Button size="sm">Get Started</Button>
-          </Link>
-        </div>
-      </header>
 
-      <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-2">
-        <div>
-          <h1 className="text-4xl font-extrabold leading-tight text-ink lg:text-5xl">
-            Remember less.
-            <br />
-            Accomplish more.
-          </h1>
-          <p className="mt-5 max-w-md text-[15px] leading-relaxed text-ink-muted">
-            Taska helps you organize your day, remember what matters, and stay focused without the
-            mental clutter. A calm productivity hub for modern professionals.
-          </p>
-          <Link to="/signup">
-            <Button className="mt-7" size="lg">
-              Get Started <ArrowRightIcon size={18} />
-            </Button>
-          </Link>
+        <div className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-12 px-6 py-10 lg:grid-cols-2 lg:px-10">
+          <div>
+            <h1 className="text-4xl font-extrabold leading-[1.1] text-ink lg:text-5xl">
+              Remember less.
+              <br />
+              Accomplish more.
+            </h1>
+            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-ink-muted">
+              Taska helps you organize your day, remember what matters, and stay focused without
+              the mental clutter. A calm productivity hub for modern professionals.
+            </p>
+            <Link to="/signup">
+              <Button className="mt-7" size="lg">
+                Get Started <ArrowRightIcon size={18} />
+              </Button>
+            </Link>
+
+            <img
+              src="/landing/notebook.png"
+              alt=""
+              className="mt-10 w-52 sm:w-56"
+              width={269}
+              height={227}
+            />
+          </div>
+
+          <div className="relative">
+            <img
+              src="/landing/hourglass.png"
+              alt=""
+              className="absolute -top-10 left-0 w-40 -rotate-3 lg:-top-14 lg:-left-8 lg:w-48"
+              width={278}
+              height={243}
+            />
+            <img
+              src="/landing/hero-mockup.png"
+              alt="Taska dashboard shown on a laptop"
+              className="w-full"
+              width={505}
+              height={565}
+            />
+          </div>
         </div>
-        <div className="relative">
-          <div className="absolute -inset-8 -z-10 rounded-full bg-primary-soft blur-2xl" />
-          <AppPreview />
-        </div>
+
+        <a
+          href="#calmer-way"
+          className="absolute bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 text-xs font-medium text-ink-muted transition-colors hover:text-primary"
+          aria-label="Scroll down to learn more"
+        >
+          Scroll to explore
+          <ChevronDownIcon size={18} className="animate-bounce" />
+        </a>
       </section>
 
-      <section className="bg-canvas py-16">
-        <div className="mx-auto max-w-6xl px-6 text-center">
+      <section id="calmer-way" className="bg-white py-20">
+        <div className="mx-auto max-w-6xl px-6 text-center lg:px-10">
           <h2 className="text-2xl font-bold text-ink lg:text-3xl">A calmer way to work</h2>
           <p className="mx-auto mt-2 max-w-lg text-sm text-ink-muted">
             Everything you need to manage your personal and professional life, without the
@@ -71,7 +106,10 @@ export default function LandingPage() {
           </p>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {FEATURES.map(({ icon: FeatureIcon, title, description }) => (
-              <div key={title} className="rounded-card bg-white p-7 text-left shadow-sm">
+              <div
+                key={title}
+                className="rounded-card border border-border-soft bg-canvas/60 p-7 text-left transition-colors hover:bg-canvas"
+              >
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white">
                   <FeatureIcon size={20} />
                 </div>
@@ -83,7 +121,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-border-soft py-8 text-center">
+      <footer className="bg-canvas py-8 text-center">
         <p className="text-xs text-ink-muted">© 2026 Taska. All rights reserved.</p>
         <p className="mt-1 text-xs text-ink-faint">
           Email:{" "}

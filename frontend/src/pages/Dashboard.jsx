@@ -68,7 +68,7 @@ export default function Dashboard() {
               <ClockIcon size={110} className="absolute -right-4 -top-4 text-white/5" />
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium">
-                  {nextUp.status === "in_progress" ? "In progress" : "Task"}
+                  {nextUp.status === "in_progress" ? "Doing" : "Task"}
                 </span>
                 {nextUp.priority === "high" && (
                   <span className="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold">
@@ -80,14 +80,12 @@ export default function Dashboard() {
               {nextUp.description && (
                 <p className="mt-1 max-w-md text-sm text-white/60">{nextUp.description}</p>
               )}
-              {nextUp.due_date && (
+              {(nextUp.start_time || nextUp.due_date) && (
                 <p className="mt-3 flex items-center gap-1.5 text-sm text-white/70">
                   <ClockIcon size={15} />
-                  {new Date(nextUp.due_date).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                  , {formatTime(nextUp.due_date)}
+                  {nextUp.start_time && formatTime(nextUp.start_time)}
+                  {nextUp.start_time && nextUp.due_date && " → "}
+                  {nextUp.due_date && formatTime(nextUp.due_date)}
                 </p>
               )}
               <div className="mt-6 flex items-center gap-3">
@@ -96,7 +94,7 @@ export default function Dashboard() {
                   onClick={() => changeStatus(nextUp.id, "in_progress")}
                   disabled={nextUp.status === "in_progress"}
                 >
-                  {nextUp.status === "in_progress" ? "In Progress" : "Start Task"}
+                  {nextUp.status === "in_progress" ? "Doing" : "Start Task"}
                 </Button>
                 <button
                   onClick={() => changeStatus(nextUp.id, "completed")}

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import AuthLayout from "../components/auth/AuthLayout";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import ErrorBanner from "../components/ui/ErrorBanner";
@@ -47,7 +46,7 @@ export default function SignUp() {
   }
 
   return (
-    <AuthLayout>
+    <>
       <h1 className="text-2xl font-bold text-ink">Create an Account</h1>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
         <ErrorBanner message={submitError} />
@@ -95,6 +94,6 @@ export default function SignUp() {
           </Link>
         </p>
       </form>
-    </AuthLayout>
+    </>
   );
 }

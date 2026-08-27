@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import * as authApi from "../api/auth";
 import { setUnauthorizedHandler } from "../api/client";
+import { setStoredToken, clearStoredToken } from "../utils/tokenStore";
 
 const AuthContext = createContext(null);
 
@@ -10,6 +11,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     localStorage.removeItem("taska_token");
+    clearStoredToken().catch(() => {});
     setUser(null);
   }, []);
 
@@ -23,6 +25,7 @@ export function AuthProvider({ children }) {
       setIsLoading(false);
       return;
     }
+    setStoredToken(token).catch(() => {});
     authApi
       .getCurrentUser()
       .then(({ user }) => setUser(user))
@@ -33,6 +36,7 @@ export function AuthProvider({ children }) {
   async function login(credentials) {
     const { user, token } = await authApi.login(credentials);
     localStorage.setItem("taska_token", token);
+    setStoredToken(token).catch(() => {});
     setUser(user);
     return user;
   }
@@ -40,6 +44,7 @@ export function AuthProvider({ children }) {
   async function register(details) {
     const { user, token } = await authApi.register(details);
     localStorage.setItem("taska_token", token);
+    setStoredToken(token).catch(() => {});
     setUser(user);
     return user;
   }

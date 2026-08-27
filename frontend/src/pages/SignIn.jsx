@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import AuthLayout from "../components/auth/AuthLayout";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import ErrorBanner from "../components/ui/ErrorBanner";
@@ -39,7 +38,7 @@ export default function SignIn() {
   }
 
   return (
-    <AuthLayout mirrored>
+    <>
       <h1 className="text-2xl font-bold text-ink">Welcome back</h1>
       <p className="mt-1 text-sm text-ink-muted">Please enter your details to sign in.</p>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
@@ -94,6 +93,6 @@ export default function SignIn() {
           </Link>
         </p>
       </form>
-    </AuthLayout>
+    </>
   );
 }

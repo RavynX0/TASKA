@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
 
   --color-canvas: #fdf1ea;
   --color-surface: #ffffff;
@@ -12,8 +12,8 @@
   --color-primary-soft: #fde7dc;
 
   --color-ink: #1a1a1a;
-  --color-ink-muted: #8b8681;
-  --color-ink-faint: #b8b2ac;
+  --color-ink-muted: #6b655f;
+  --color-ink-faint: #9c9690;
 
   --color-border-soft: #f0e4dc;
 

@@ -5,6 +5,8 @@ import Button from "../ui/Button";
 import ErrorBanner from "../ui/ErrorBanner";
 import { useTasks } from "../../context/TasksContext";
 import { REMINDER_OPTIONS, DEFAULT_REMINDER_MINUTES } from "../../utils/reminders";
+import { STATUS_OPTIONS } from "../../utils/status";
+import { BellIcon } from "../icons";
 
 function toDateTimeLocal(value) {
   if (!value) return "";
@@ -12,6 +14,20 @@ function toDateTimeLocal(value) {
   const offset = date.getTimezoneOffset();
   const local = new Date(date.getTime() - offset * 60000);
   return local.toISOString().slice(0, 16);
+}
+
+// Taska calculates the notification time from start + reminder offset -
+// the user should never have to do that math themselves.
+function computeReminderPreview(startTimeLocal, reminderMinutesStr) {
+  if (!startTimeLocal || reminderMinutesStr === "") return null;
+  const start = new Date(startTimeLocal);
+  if (Number.isNaN(start.getTime())) return null;
+  const lead = Number(reminderMinutesStr);
+  const notifyAt = new Date(start.getTime() - lead * 60000);
+  const time = notifyAt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return lead === 0
+    ? `You'll be reminded right when it's time to start this task.`
+    : `You'll be reminded at ${time} to start this task.`;
 }
 
 const emptyForm = {
@@ -58,10 +74,16 @@ export default function TaskFormModal() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  const reminderPreview = computeReminderPreview(form.startTime, form.reminderMinutes);
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.title.trim()) {
       setError("Title is required");
+      return;
+    }
+    if (form.startTime && form.dueDate && new Date(form.dueDate) < new Date(form.startTime)) {
+      setError("Due time can't be before the start time");
       return;
     }
     setSaving(true);
@@ -143,27 +165,32 @@ export default function TaskFormModal() {
               value={form.status}
               onChange={(e) => set("status", e.target.value)}
             >
-              <option value="pending">Pending</option>
-              <option value="in_progress">In progress</option>
-              <option value="completed">Completed</option>
+              {STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>
-        <Input
-          label="Due date"
-          type="datetime-local"
-          value={form.dueDate}
-          onChange={(e) => set("dueDate", e.target.value)}
-        />
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            label="Start time"
-            type="datetime-local"
-            value={form.startTime}
-            onChange={(e) => set("startTime", e.target.value)}
-          />
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-ink">Remind me</label>
+        <div className="rounded-control border border-border-soft bg-canvas/60 p-4">
+          <p className="mb-3 text-sm font-semibold text-ink">Schedule</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input
+              label="Start"
+              type="datetime-local"
+              value={form.startTime}
+              onChange={(e) => set("startTime", e.target.value)}
+            />
+            <Input
+              label="Due"
+              type="datetime-local"
+              value={form.dueDate}
+              onChange={(e) => set("dueDate", e.target.value)}
+            />
+          </div>
+          <div className="mt-4">
+            <label className="mb-1.5 block text-sm font-medium text-ink">Reminder</label>
             <select
               className="h-11 w-full rounded-control border border-border-soft bg-white px-3.5 text-[15px] text-ink outline-none focus:border-primary disabled:opacity-50"
               value={form.reminderMinutes}
@@ -177,12 +204,18 @@ export default function TaskFormModal() {
               ))}
             </select>
           </div>
+          {reminderPreview && (
+            <p className="mt-3 flex items-start gap-1.5 text-xs text-primary">
+              <BellIcon size={14} className="mt-0.5 shrink-0" />
+              {reminderPreview}
+            </p>
+          )}
+          {!form.startTime && (
+            <p className="mt-3 text-xs text-ink-muted">
+              Add a start time to get a reminder and a start-time nudge for this task.
+            </p>
+          )}
         </div>
-        {form.startTime && (
-          <p className="-mt-2 text-xs text-ink-muted">
-            A browser notification fires while Taska is open in this tab.
-          </p>
-        )}
         <div className="flex items-center justify-between pt-2">
           {isEdit ? (
             <Button

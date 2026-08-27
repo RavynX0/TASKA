@@ -1,3 +1,5 @@
+import { STATUS_LABEL } from "../../utils/status";
+
 const PRIORITY_STYLES = {
   high: "bg-red-50 text-red-500",
   medium: "bg-gray-100 text-gray-500",
@@ -11,8 +13,6 @@ const STATUS_STYLES = {
   in_progress: "bg-primary-soft text-primary",
   completed: "bg-green-50 text-green-600",
 };
-
-const STATUS_LABEL = { pending: "Pending", in_progress: "In progress", completed: "Done" };
 
 export function PriorityBadge({ priority, className = "" }) {
   if (!priority) return null;

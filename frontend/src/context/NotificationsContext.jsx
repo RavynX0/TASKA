@@ -4,6 +4,9 @@ import { urlBase64ToUint8Array } from "../utils/push";
 
 const NotificationsContext = createContext(null);
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const SW_URL = `/sw.js?apiUrl=${encodeURIComponent(API_URL)}`;
+
 const isSupported =
   typeof window !== "undefined" &&
   "Notification" in window &&
@@ -19,10 +22,22 @@ export function NotificationsProvider({ children }) {
   useEffect(() => {
     if (!isSupported) return;
     navigator.serviceWorker
-      .register("/sw.js")
+      .register(SW_URL)
       .then((registration) => registration.pushManager.getSubscription())
-      .then((existing) => setSubscribed(Boolean(existing)))
+      .then((existing) => {
+        setSubscribed(Boolean(existing));
+        // Default to on: try to enable automatically so most users never have to
+        // find the toggle in Profile. The browser still owns the actual permission
+        // prompt on a user's very first visit - that native dialog can't be
+        // skipped or auto-accepted by any app, by design (it's how every site's
+        // notification permission works). Once granted, this makes every later
+        // visit silent.
+        if (!existing && Notification.permission !== "denied") {
+          enable();
+        }
+      })
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function enable() {

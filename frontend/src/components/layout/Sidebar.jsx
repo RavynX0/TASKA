@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { HomeIcon, TasksIcon, CalendarIcon, BellIcon, UserIcon, PlusIcon, LogOutIcon, XIcon } from "../icons";
+import Logo from "../Logo";
 import { useAuth } from "../../context/AuthContext";
 import { useTasks } from "../../context/TasksContext";
 
@@ -33,21 +34,18 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
           aria-hidden="true"
         />
       )}
+      {/* Fixed (not scroll-flow) on every breakpoint, so it never moves with page scroll. */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 -translate-x-full flex-col border-r border-border-soft bg-white px-5 py-6 transition-transform duration-200 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 -translate-x-full flex-col bg-white px-5 py-6 shadow-sm transition-transform duration-200 lg:inset-y-auto lg:left-4 lg:top-4 lg:bottom-4 lg:h-auto lg:w-60 lg:translate-x-0 lg:rounded-[50px] lg:px-7 lg:py-8 ${
           open ? "translate-x-0" : ""
         }`}
       >
         <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-base font-bold text-white">
-              T
-            </div>
-            <div>
-              <p className="text-[15px] font-bold leading-tight text-ink">Taska</p>
-              <p className="text-xs leading-tight text-ink-muted">Productivity Hub</p>
-            </div>
-          </div>
+          <Logo
+            size={36}
+            subtitle="Productivity Hub"
+            nameClassName="text-[15px] font-bold text-ink"
+          />
           <button
             onClick={onClose}
             className="rounded-lg p-1.5 text-ink-muted hover:bg-canvas lg:hidden"

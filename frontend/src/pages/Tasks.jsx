@@ -67,8 +67,8 @@ export default function Tasks() {
         <select value={status} onChange={(e) => setStatus(e.target.value)} className={SELECT_CLASS}>
           <option value="all">All Status</option>
           <option value="pending">Pending</option>
-          <option value="in_progress">In progress</option>
-          <option value="completed">Completed</option>
+          <option value="in_progress">Doing</option>
+          <option value="completed">Done</option>
         </select>
         <select value={priority} onChange={(e) => setPriority(e.target.value)} className={SELECT_CLASS}>
           <option value="all">All Priority</option>

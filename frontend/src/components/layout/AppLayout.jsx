@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import TaskFormModal from "../tasks/TaskFormModal";
+import RescheduleDeepLinkHandler from "../tasks/RescheduleDeepLinkHandler";
+import { LogoMark } from "../Logo";
 import { TasksProvider } from "../../context/TasksContext";
 import { NotificationsProvider } from "../../context/NotificationsContext";
 
@@ -19,9 +21,9 @@ export default function AppLayout() {
   return (
     <TasksProvider>
       <NotificationsProvider>
-        <div className="flex min-h-screen bg-canvas">
+        <div className="min-h-screen bg-canvas">
           <Sidebar open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 lg:pl-[272px]">
             <div className="flex items-center gap-3 border-b border-border-soft bg-white px-4 py-3 lg:hidden">
               <button
                 onClick={() => setMobileNavOpen(true)}
@@ -30,14 +32,16 @@ export default function AppLayout() {
               >
                 <MenuIcon />
               </button>
+              <LogoMark size={26} />
               <span className="text-[15px] font-bold text-ink">Taska</span>
             </div>
-            <main className="overflow-y-auto px-5 py-6 sm:px-8 sm:py-7 lg:px-10">
+            <main className="px-5 py-6 sm:px-8 sm:py-7 lg:px-10">
               <Outlet />
             </main>
           </div>
         </div>
         <TaskFormModal />
+        <RescheduleDeepLinkHandler />
       </NotificationsProvider>
     </TasksProvider>
   );
