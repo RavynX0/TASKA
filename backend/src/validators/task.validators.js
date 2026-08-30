@@ -62,8 +62,17 @@ function validateCreateTask(req, res, next) {
 }
 
 function validateUpdateTask(req, res, next) {
-  const { title, description, status, priority, dueDate, startTime, reminderMinutes } =
-    req.body || {};
+  const {
+    title,
+    description,
+    status,
+    priority,
+    dueDate,
+    startTime,
+    reminderMinutes,
+    snoozeUntil,
+    muteCheckins,
+  } = req.body || {};
   const errors = [];
 
   if (title !== undefined && (typeof title !== "string" || title.trim().length === 0)) {
@@ -93,6 +102,12 @@ function validateUpdateTask(req, res, next) {
     !REMINDER_MINUTES_VALUES.includes(reminderMinutes)
   ) {
     errors.push(`reminderMinutes must be one of: ${REMINDER_MINUTES_VALUES.join(", ")}`);
+  }
+  if (snoozeUntil !== undefined && snoozeUntil !== null && !isValidDate(snoozeUntil)) {
+    errors.push("snoozeUntil must be a valid date");
+  }
+  if (muteCheckins !== undefined && typeof muteCheckins !== "boolean") {
+    errors.push("muteCheckins must be a boolean");
   }
 
   if (Object.keys(req.body || {}).length === 0) {

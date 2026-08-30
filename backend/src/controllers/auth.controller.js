@@ -45,4 +45,9 @@ const me = asyncHandler(async (req, res) => {
   res.status(200).json({ user: req.user });
 });
 
-module.exports = { register, login, me };
+const updatePreferences = asyncHandler(async (req, res) => {
+  const user = await userModel.updatePreferences(req.user.id, req.body || {});
+  res.status(200).json({ user });
+});
+
+module.exports = { register, login, me, updatePreferences };

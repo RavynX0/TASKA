@@ -2,7 +2,10 @@ const path = require("path");
 const dotenv = require("dotenv");
 
 const envFile = process.env.NODE_ENV === "test" ? ".env.test" : ".env";
-dotenv.config({ path: path.resolve(__dirname, "../../", envFile) });
+// override: true so the committed .env file is the source of truth in local dev.
+// Without this, a stray PGDATABASE / DATABASE_URL left in the shell environment
+// silently wins over .env and the server ends up talking to the wrong database.
+dotenv.config({ path: path.resolve(__dirname, "../../", envFile), override: true });
 
 function required(name, fallback) {
   const value = process.env[name] ?? fallback;

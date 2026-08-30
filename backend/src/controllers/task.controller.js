@@ -34,7 +34,17 @@ const getTask = asyncHandler(async (req, res) => {
 });
 
 const updateTask = asyncHandler(async (req, res) => {
-  const { title, description, status, priority, dueDate, startTime, reminderMinutes } = req.body;
+  const {
+    title,
+    description,
+    status,
+    priority,
+    dueDate,
+    startTime,
+    reminderMinutes,
+    snoozeUntil,
+    muteCheckins,
+  } = req.body;
 
   const existing = await taskModel.findByIdForUser(req.params.id, req.user.id);
   if (!existing) {
@@ -47,8 +57,19 @@ const updateTask = asyncHandler(async (req, res) => {
       ? 10
       : reminderMinutes;
 
-  // Rescheduling clears any already-sent flag so the reminder can fire again for the new time.
+  // Rescheduling clears every "already notified"/snooze flag so the full
+  // start -> reminder -> due cycle can run again for the new time.
   const reschedule = startTime !== undefined || reminderMinutes !== undefined;
+
+  let snoozeCount;
+  let resolvedSnoozeUntil = snoozeUntil;
+  if (muteCheckins === true) {
+    snoozeCount = -1;
+    resolvedSnoozeUntil = null;
+  } else if (snoozeUntil !== undefined) {
+    const current = existing.snooze_count ?? 0;
+    snoozeCount = current < 0 ? 1 : current + 1;
+  }
 
   const task = await taskModel.updateForUser(req.params.id, req.user.id, {
     title: title !== undefined ? title.trim() : undefined,
@@ -59,6 +80,10 @@ const updateTask = asyncHandler(async (req, res) => {
     start_time: startTime,
     reminder_minutes: resolvedReminder,
     reminder_sent_at: reschedule ? null : undefined,
+    start_notified_at: reschedule ? null : undefined,
+    due_notified_at: dueDate !== undefined ? null : undefined,
+    snooze_until: reschedule ? null : resolvedSnoozeUntil,
+    snooze_count: reschedule ? 0 : snoozeCount,
   });
 
   res.status(200).json({ task });
@@ -70,9 +95,22 @@ const updateTaskStatus = asyncHandler(async (req, res) => {
     throw new AppError(404, "Task not found");
   }
 
-  const task = await taskModel.updateForUser(req.params.id, req.user.id, {
-    status: req.body.status,
-  });
+  const { status } = req.body;
+  const fields = { status };
+
+  if (status === "pending") {
+    // Re-opening a task resets its whole notification cycle.
+    fields.start_notified_at = null;
+    fields.due_notified_at = null;
+    fields.snooze_until = null;
+    fields.snooze_count = 0;
+  } else if (status === "in_progress") {
+    // Task has started - stop nagging the user to start it.
+    fields.snooze_until = null;
+    fields.snooze_count = 0;
+  }
+
+  const task = await taskModel.updateForUser(req.params.id, req.user.id, fields);
 
   res.status(200).json({ task });
 });

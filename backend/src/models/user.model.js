@@ -1,6 +1,15 @@
 const db = require("../config/db");
 
-const PUBLIC_COLUMNS = "id, name, email, created_at, updated_at";
+const PUBLIC_COLUMNS =
+  "id, name, email, notification_preferences, created_at, updated_at";
+
+// Server-enforced notification toggles and their defaults. Anything the client
+// sends that isn't in here is ignored; anything missing falls back to `true`.
+const PREFERENCE_DEFAULTS = {
+  startTimeNotifications: true,
+  followUpNotifications: true,
+  missedTaskNotifications: true,
+};
 
 async function createUser({ name, email, passwordHash }) {
   const result = await db.query(
@@ -22,4 +31,31 @@ async function findById(id) {
   return result.rows[0] || null;
 }
 
-module.exports = { createUser, findByEmail, findById };
+function resolvePreferences(raw) {
+  return { ...PREFERENCE_DEFAULTS, ...(raw || {}) };
+}
+
+async function updatePreferences(id, patch) {
+  const clean = {};
+  for (const key of Object.keys(PREFERENCE_DEFAULTS)) {
+    if (typeof patch[key] === "boolean") clean[key] = patch[key];
+  }
+  const result = await db.query(
+    `UPDATE users
+     SET notification_preferences = notification_preferences || $2::jsonb,
+         updated_at = now()
+     WHERE id = $1
+     RETURNING ${PUBLIC_COLUMNS}`,
+    [id, JSON.stringify(clean)]
+  );
+  return result.rows[0] || null;
+}
+
+module.exports = {
+  createUser,
+  findByEmail,
+  findById,
+  updatePreferences,
+  resolvePreferences,
+  PREFERENCE_DEFAULTS,
+};
