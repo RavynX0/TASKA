@@ -11,16 +11,19 @@ export function TasksProvider({ children }) {
   const [error, setError] = useState(null);
   const [modal, setModal] = useState({ open: false, task: null });
 
-  const refresh = useCallback(async () => {
-    setIsLoading(true);
+  // `silent` re-fetches without flipping the page into its loading state -
+  // used for background syncs (e.g. after a notification action changes a task
+  // in another tab or while the app was closed).
+  const refresh = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setIsLoading(true);
     setError(null);
     try {
       const data = await tasksApi.listTasks();
       setTasks(data);
     } catch (err) {
-      setError(err.message);
+      if (!silent) setError(err.message);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, []);
 

@@ -2,14 +2,15 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTasks } from "../../context/TasksContext";
 
-// Handles two things a "Reschedule" notification action can trigger:
+// Bridges the service worker back to the running app:
 // 1. A fresh window opened at /tasks?reschedule=<id> (self.clients.openWindow)
-// 2. A message posted to an already-open tab asking it to navigate there
-//    (self.clients focus + postMessage, when the SW found an existing client)
+// 2. A "navigate" message posted to an already-open tab (Reschedule action)
+// 3. A "tasks changed" message after a notification action (Start / Done /
+//    snooze) so the dashboard reflects the new status without a reload.
 export default function RescheduleDeepLinkHandler() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { tasks, isLoading, openEditModal } = useTasks();
+  const { tasks, isLoading, openEditModal, refresh } = useTasks();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -28,13 +29,27 @@ export default function RescheduleDeepLinkHandler() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
     function onMessage(event) {
-      if (event.data?.type === "taska-navigate" && event.data.path) {
-        navigate(event.data.path);
+      const msg = event.data || {};
+      if (msg.type === "taska-navigate" && msg.path) {
+        navigate(msg.path);
+        refresh({ silent: true });
+      } else if (msg.type === "taska-tasks-changed") {
+        refresh({ silent: true });
       }
     }
     navigator.serviceWorker.addEventListener("message", onMessage);
     return () => navigator.serviceWorker.removeEventListener("message", onMessage);
-  }, [navigate]);
+  }, [navigate, refresh]);
+
+  // Backstop: if a notification action fired while this tab was hidden or the
+  // message was missed, re-sync when the user comes back to the tab.
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible") refresh({ silent: true });
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [refresh]);
 
   return null;
 }

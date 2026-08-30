@@ -2,11 +2,19 @@ import { useEffect, useState } from "react";
 import Modal from "../ui/Modal";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
+import Select from "../ui/Select";
 import ErrorBanner from "../ui/ErrorBanner";
 import { useTasks } from "../../context/TasksContext";
-import { REMINDER_OPTIONS, DEFAULT_REMINDER_MINUTES } from "../../utils/reminders";
+import { useNotifications } from "../../context/NotificationsContext";
+import { REMINDER_OPTIONS } from "../../utils/reminders";
 import { STATUS_OPTIONS } from "../../utils/status";
-import { BellIcon } from "../icons";
+import { BellIcon, ClockIcon } from "../icons";
+
+const PRIORITY_OPTIONS = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+];
 
 function toDateTimeLocal(value) {
   if (!value) return "";
@@ -16,37 +24,81 @@ function toDateTimeLocal(value) {
   return local.toISOString().slice(0, 16);
 }
 
-// Taska calculates the notification time from start + reminder offset -
-// the user should never have to do that math themselves.
-function computeReminderPreview(startTimeLocal, reminderMinutesStr) {
-  if (!startTimeLocal || reminderMinutesStr === "") return null;
-  const start = new Date(startTimeLocal);
-  if (Number.isNaN(start.getTime())) return null;
-  const lead = Number(reminderMinutesStr);
-  const notifyAt = new Date(start.getTime() - lead * 60000);
-  const time = notifyAt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  return lead === 0
-    ? `You'll be reminded right when it's time to start this task.`
-    : `You'll be reminded at ${time} to start this task.`;
+// "3 hr 20 min", "45 min", "2 days 4 hr" - an alarm-style countdown so the user
+// can see how far off a start time / reminder is without doing the math.
+function formatCountdown(ms) {
+  const totalMin = Math.round(ms / 60000);
+  if (totalMin < 1) return "less than a minute";
+  const days = Math.floor(totalMin / 1440);
+  const hrs = Math.floor((totalMin % 1440) / 60);
+  const mins = totalMin % 60;
+  const parts = [];
+  if (days) parts.push(`${days} day${days === 1 ? "" : "s"}`);
+  if (hrs) parts.push(`${hrs} hr`);
+  if (mins && !days) parts.push(`${mins} min`); // once we're into days, minutes are noise
+  return parts.join(" ");
 }
 
-const emptyForm = {
-  title: "",
-  description: "",
-  status: "pending",
-  priority: "medium",
-  dueDate: "",
-  startTime: "",
-  reminderMinutes: String(DEFAULT_REMINDER_MINUTES),
-};
+// Taska calculates the notification time from start + reminder offset - the user
+// should never have to do that math. `now` is passed in so the preview ticks
+// while the modal is open, the way an alarm app counts down.
+function buildSchedulePreview(startTimeLocal, reminderMinutesStr, now) {
+  if (!startTimeLocal) return { kind: "empty" };
+  const start = new Date(startTimeLocal).getTime();
+  if (Number.isNaN(start)) return { kind: "empty" };
+
+  const msToStart = start - now;
+  if (msToStart <= 0) return { kind: "past" };
+
+  const startLine = `Starts in ${formatCountdown(msToStart)}`;
+  if (reminderMinutesStr === "") return { kind: "ok", startLine, reminderLine: null };
+
+  const lead = Number(reminderMinutesStr);
+  const notifyAt = start - lead * 60000;
+  const clock = new Date(notifyAt).toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  let reminderLine;
+  if (lead === 0) {
+    reminderLine = "Taska will notify you right at the start time";
+  } else if (notifyAt <= now) {
+    reminderLine = "Taska will notify you as soon as you save";
+  } else {
+    reminderLine = `Reminder in ${formatCountdown(notifyAt - now)} — around ${clock}`;
+  }
+  return { kind: "ok", startLine, reminderLine };
+}
+
+function makeEmptyForm(defaultReminderMinutes) {
+  return {
+    title: "",
+    description: "",
+    status: "pending",
+    priority: "medium",
+    dueDate: "",
+    startTime: "",
+    reminderMinutes: String(defaultReminderMinutes),
+  };
+}
 
 export default function TaskFormModal() {
   const { modal, closeModal, addTask, editTask, removeTask } = useTasks();
+  const { defaultReminderMinutes, armPrimer } = useNotifications();
   const isEdit = Boolean(modal.task);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(() => makeEmptyForm(defaultReminderMinutes));
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  // Tick the countdown once a minute while the modal is open.
+  useEffect(() => {
+    if (!modal.open) return;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(id);
+  }, [modal.open]);
 
   useEffect(() => {
     if (modal.open) {
@@ -65,16 +117,16 @@ export default function TaskFormModal() {
                   ? ""
                   : String(modal.task.reminder_minutes),
             }
-          : emptyForm
+          : makeEmptyForm(defaultReminderMinutes)
       );
     }
-  }, [modal.open, modal.task]);
+  }, [modal.open, modal.task, defaultReminderMinutes]);
 
   function set(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  const reminderPreview = computeReminderPreview(form.startTime, form.reminderMinutes);
+  const schedulePreview = buildSchedulePreview(form.startTime, form.reminderMinutes, now);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -103,6 +155,10 @@ export default function TaskFormModal() {
         await editTask(modal.task.id, payload);
       } else {
         await addTask(payload);
+        // First scheduled task = the right moment to (softly) ask about
+        // notifications. armPrimer only unlocks the in-app primer card; it
+        // never triggers the browser prompt on its own.
+        if (payload.startTime) armPrimer();
       }
       closeModal();
     } catch (err) {
@@ -148,29 +204,23 @@ export default function TaskFormModal() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink">Priority</label>
-            <select
-              className="h-11 w-full rounded-control border border-border-soft bg-white px-3.5 text-[15px] text-ink outline-none focus:border-primary"
+            <Select
+              variant="field"
+              aria-label="Priority"
               value={form.priority}
-              onChange={(e) => set("priority", e.target.value)}
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
+              onChange={(v) => set("priority", v)}
+              options={PRIORITY_OPTIONS}
+            />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink">Status</label>
-            <select
-              className="h-11 w-full rounded-control border border-border-soft bg-white px-3.5 text-[15px] text-ink outline-none focus:border-primary"
+            <Select
+              variant="field"
+              aria-label="Status"
               value={form.status}
-              onChange={(e) => set("status", e.target.value)}
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => set("status", v)}
+              options={STATUS_OPTIONS}
+            />
           </div>
         </div>
         <div className="rounded-control border border-border-soft bg-canvas/60 p-4">
@@ -191,26 +241,36 @@ export default function TaskFormModal() {
           </div>
           <div className="mt-4">
             <label className="mb-1.5 block text-sm font-medium text-ink">Reminder</label>
-            <select
-              className="h-11 w-full rounded-control border border-border-soft bg-white px-3.5 text-[15px] text-ink outline-none focus:border-primary disabled:opacity-50"
+            <Select
+              variant="field"
+              aria-label="Reminder"
               value={form.reminderMinutes}
-              onChange={(e) => set("reminderMinutes", e.target.value)}
+              onChange={(v) => set("reminderMinutes", v)}
+              options={REMINDER_OPTIONS}
               disabled={!form.startTime}
-            >
-              {REMINDER_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            />
           </div>
-          {reminderPreview && (
-            <p className="mt-3 flex items-start gap-1.5 text-xs text-primary">
-              <BellIcon size={14} className="mt-0.5 shrink-0" />
-              {reminderPreview}
+          {schedulePreview.kind === "ok" && (
+            <div className="mt-3 space-y-1.5 rounded-control bg-primary-soft/60 px-3.5 py-3">
+              <p className="flex items-center gap-2 text-[13px] font-semibold text-primary">
+                <ClockIcon size={14} className="shrink-0" />
+                {schedulePreview.startLine}
+              </p>
+              {schedulePreview.reminderLine && (
+                <p className="flex items-center gap-2 text-xs text-primary/80">
+                  <BellIcon size={13} className="shrink-0" />
+                  {schedulePreview.reminderLine}
+                </p>
+              )}
+            </div>
+          )}
+          {schedulePreview.kind === "past" && (
+            <p className="mt-3 flex items-start gap-1.5 text-xs text-amber-600">
+              <ClockIcon size={14} className="mt-0.5 shrink-0" />
+              That start time has already passed — pick a time in the future to get a reminder.
             </p>
           )}
-          {!form.startTime && (
+          {schedulePreview.kind === "empty" && (
             <p className="mt-3 text-xs text-ink-muted">
               Add a start time to get a reminder and a start-time nudge for this task.
             </p>
