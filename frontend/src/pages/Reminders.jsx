@@ -2,7 +2,9 @@ import { useTasks } from "../context/TasksContext";
 import { PageLoader } from "../components/ui/Spinner";
 import ErrorBanner from "../components/ui/ErrorBanner";
 import EmptyState from "../components/ui/EmptyState";
-import { PlusIcon, SunIcon, MoonIcon, CalendarIcon, BellIcon } from "../components/icons";
+import Button from "../components/ui/Button";
+import { AllClearEmpty, CalendarEmpty } from "../components/ui/EmptyIllustrations";
+import { PlusIcon, SunIcon, MoonIcon, CalendarIcon } from "../components/icons";
 import { formatTime, groupTasksByDate } from "../utils/date";
 
 export default function Reminders() {
@@ -39,9 +41,14 @@ export default function Reminders() {
 
           {today.length === 0 ? (
             <EmptyState
-              icon={<BellIcon size={28} />}
+              illustration={<AllClearEmpty />}
               title="No reminders for today"
-              description="You're all clear — enjoy the calm."
+              description="You're all clear. Schedule a task with a start time and it'll show up here."
+              action={
+                <Button onClick={openCreateModal}>
+                  <PlusIcon size={17} /> New reminder
+                </Button>
+              }
             />
           ) : (
             <div className="space-y-3">
@@ -91,7 +98,10 @@ export default function Reminders() {
               <h2 className="text-xs font-bold uppercase tracking-wide">Tomorrow</h2>
             </div>
             {tomorrow.length === 0 ? (
-              <p className="text-sm text-ink-muted">Nothing scheduled yet.</p>
+              <div className="flex flex-col items-center py-3 text-center">
+                <CalendarEmpty />
+                <p className="mt-1 text-sm text-ink-muted">Nothing scheduled yet.</p>
+              </div>
             ) : (
               <div className="space-y-3">
                 {tomorrow.map((task) => (

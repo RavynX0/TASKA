@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import TaskFormModal from "../tasks/TaskFormModal";
 import RescheduleDeepLinkHandler from "../tasks/RescheduleDeepLinkHandler";
+import NotificationPrimer from "../../notifications/NotificationPrimer";
 import { LogoMark } from "../Logo";
 import { TasksProvider } from "../../context/TasksContext";
 import { NotificationsProvider } from "../../context/NotificationsContext";
@@ -42,6 +43,7 @@ export default function AppLayout() {
         </div>
         <TaskFormModal />
         <RescheduleDeepLinkHandler />
+        <NotificationPrimer />
       </NotificationsProvider>
     </TasksProvider>
   );

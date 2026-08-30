@@ -5,6 +5,7 @@ import { PageLoader } from "../components/ui/Spinner";
 import ErrorBanner from "../components/ui/ErrorBanner";
 import Button from "../components/ui/Button";
 import EmptyState from "../components/ui/EmptyState";
+import { TasksEmpty, AllClearEmpty, CalendarEmpty } from "../components/ui/EmptyIllustrations";
 import TaskRow from "../components/tasks/TaskRow";
 import { ClockIcon, PlusIcon, CheckIcon, MoreHorizontalIcon } from "../components/icons";
 import { formatTime, greetingForNow, groupTasksByDate } from "../utils/date";
@@ -113,7 +114,16 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            <EmptyState title="Nothing urgent right now" description="Add a task to get started." />
+            <EmptyState
+              illustration={<TasksEmpty />}
+              title="Nothing urgent right now"
+              description="Add your first task and Taska will keep it front and centre."
+              action={
+                <Button onClick={openCreateModal}>
+                  <PlusIcon size={17} /> Add Task
+                </Button>
+              }
+            />
           )}
 
           <div className="mb-3 mt-8 flex items-center justify-between">
@@ -125,8 +135,14 @@ export default function Dashboard() {
 
           {restOfToday.length === 0 ? (
             <EmptyState
+              illustration={<AllClearEmpty />}
               title="No more tasks for today"
-              description="Enjoy the calm — or plan ahead for tomorrow."
+              description="Enjoy the calm — or line up what's next."
+              action={
+                <Link to="/plan-my-day">
+                  <Button variant="outline">Plan my day</Button>
+                </Link>
+              }
             />
           ) : (
             <div className="space-y-2.5">
@@ -141,7 +157,10 @@ export default function Dashboard() {
           <div className="rounded-card bg-white p-5 shadow-sm">
             <h2 className="mb-4 text-[15px] font-bold text-ink">Tomorrow</h2>
             {groups.tomorrow.length === 0 ? (
-              <p className="text-sm text-ink-muted">Nothing scheduled for tomorrow yet.</p>
+              <div className="flex flex-col items-center py-4 text-center">
+                <CalendarEmpty />
+                <p className="mt-2 text-sm text-ink-muted">Nothing scheduled for tomorrow yet.</p>
+              </div>
             ) : (
               <ul className="space-y-4">
                 {groups.tomorrow

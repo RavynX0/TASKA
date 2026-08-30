@@ -68,6 +68,10 @@ async function updateForUser(id, userId, fields) {
     "start_time",
     "reminder_minutes",
     "reminder_sent_at",
+    "start_notified_at",
+    "due_notified_at",
+    "snooze_until",
+    "snooze_count",
   ];
   const setClauses = [];
   const params = [];
@@ -123,6 +127,69 @@ async function markReminderSent(id) {
   await db.query("UPDATE tasks SET reminder_sent_at = now() WHERE id = $1", [id]);
 }
 
+// How long an ignored (not snoozed) start nudge waits before its single
+// follow-up.
+const FOLLOW_UP_AFTER = "30 minutes";
+
+// Tasks that need a "start now" nudge. Three ways in:
+//   1. the first ping, right at start_time (start_notified_at IS NULL)
+//   2. a snooze the user explicitly asked for has come due
+//   3. the first ping was ignored (not snoozed) and FOLLOW_UP_AFTER has passed
+//      - this is the one automatic follow-up
+// snooze_count < 0 means the user chose "Skip" - never auto-check-in again.
+async function findDueStartCheckins() {
+  const result = await db.query(
+    `SELECT * FROM tasks
+     WHERE status = 'pending'
+       AND start_time IS NOT NULL
+       AND snooze_count >= 0
+       AND now() < start_time + interval '6 hours'
+       AND (
+         (start_notified_at IS NULL AND now() >= start_time)
+         OR (snooze_until IS NOT NULL AND now() >= snooze_until)
+         OR (
+           start_notified_at IS NOT NULL
+           AND snooze_until IS NULL
+           AND snooze_count = 0
+           AND now() >= start_notified_at + interval '${FOLLOW_UP_AFTER}'
+         )
+       )`
+  );
+  return result.rows;
+}
+
+async function markStartNotified(id) {
+  await db.query(
+    "UPDATE tasks SET start_notified_at = COALESCE(start_notified_at, now()), snooze_until = NULL WHERE id = $1",
+    [id]
+  );
+}
+
+// After the automatic follow-up for an ignored nudge: clear any snooze and move
+// past stage 0 so it can't fire again.
+async function markFollowUpSent(id) {
+  await db.query(
+    "UPDATE tasks SET snooze_until = NULL, snooze_count = GREATEST(snooze_count, 1) WHERE id = $1",
+    [id]
+  );
+}
+
+async function findDueDueNotifications() {
+  const result = await db.query(
+    `SELECT * FROM tasks
+     WHERE due_date IS NOT NULL
+       AND status != 'completed'
+       AND due_notified_at IS NULL
+       AND now() >= due_date
+       AND now() < due_date + interval '6 hours'`
+  );
+  return result.rows;
+}
+
+async function markDueNotified(id) {
+  await db.query("UPDATE tasks SET due_notified_at = now() WHERE id = $1", [id]);
+}
+
 module.exports = {
   createTask,
   findAllForUser,
@@ -131,4 +198,9 @@ module.exports = {
   deleteForUser,
   findDueReminders,
   markReminderSent,
+  findDueStartCheckins,
+  markStartNotified,
+  markFollowUpSent,
+  findDueDueNotifications,
+  markDueNotified,
 };

@@ -41,6 +41,12 @@ export function AuthProvider({ children }) {
     return user;
   }
 
+  async function updateNotificationPreferences(patch) {
+    const updated = await authApi.updateNotificationPreferences(patch);
+    setUser(updated);
+    return updated;
+  }
+
   async function register(details) {
     const { user, token } = await authApi.register(details);
     localStorage.setItem("taska_token", token);
@@ -50,7 +56,9 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, login, register, logout, updateNotificationPreferences }}
+    >
       {children}
     </AuthContext.Provider>
   );

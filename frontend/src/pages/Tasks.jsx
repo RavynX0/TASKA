@@ -4,18 +4,42 @@ import { PageLoader } from "../components/ui/Spinner";
 import ErrorBanner from "../components/ui/ErrorBanner";
 import EmptyState from "../components/ui/EmptyState";
 import TaskCard from "../components/tasks/TaskCard";
-import { SearchIcon, TasksIcon } from "../components/icons";
+import Select from "../components/ui/Select";
+import Button from "../components/ui/Button";
+import { TasksEmpty, SearchEmpty } from "../components/ui/EmptyIllustrations";
+import { SearchIcon, PlusIcon } from "../components/icons";
 import { groupTasksByDate } from "../utils/date";
 
-const SELECT_CLASS =
-  "h-10 rounded-full border border-border-soft bg-white px-4 text-sm font-medium text-ink outline-none focus:border-primary";
+const STATUS_FILTERS = [
+  { value: "all", label: "All status" },
+  { value: "pending", label: "Pending" },
+  { value: "in_progress", label: "Doing" },
+  { value: "completed", label: "Done" },
+];
+const PRIORITY_FILTERS = [
+  { value: "all", label: "All priority" },
+  { value: "high", label: "High" },
+  { value: "medium", label: "Medium" },
+  { value: "low", label: "Low" },
+];
+const SORT_OPTIONS = [
+  { value: "soonest", label: "Due date: soonest" },
+  { value: "latest", label: "Due date: latest" },
+];
 
 export default function Tasks() {
-  const { tasks, isLoading, error } = useTasks();
+  const { tasks, isLoading, error, openCreateModal } = useTasks();
   const [status, setStatus] = useState("all");
   const [priority, setPriority] = useState("all");
   const [sort, setSort] = useState("soonest");
   const [search, setSearch] = useState("");
+
+  const clearFilters = () => {
+    setStatus("all");
+    setPriority("all");
+    setSort("soonest");
+    setSearch("");
+  };
 
   const filtered = useMemo(() => {
     let list = tasks;
@@ -64,32 +88,37 @@ export default function Tasks() {
             className="h-10 w-52 rounded-full border border-border-soft bg-white pl-9 pr-4 text-sm outline-none focus:border-primary"
           />
         </div>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className={SELECT_CLASS}>
-          <option value="all">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="in_progress">Doing</option>
-          <option value="completed">Done</option>
-        </select>
-        <select value={priority} onChange={(e) => setPriority(e.target.value)} className={SELECT_CLASS}>
-          <option value="all">All Priority</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
-        <select value={sort} onChange={(e) => setSort(e.target.value)} className={SELECT_CLASS}>
-          <option value="soonest">Due Date: Soonest</option>
-          <option value="latest">Due Date: Latest</option>
-        </select>
+        <Select aria-label="Filter by status" value={status} onChange={setStatus} options={STATUS_FILTERS} />
+        <Select aria-label="Filter by priority" value={priority} onChange={setPriority} options={PRIORITY_FILTERS} />
+        <Select aria-label="Sort tasks" value={sort} onChange={setSort} options={SORT_OPTIONS} />
       </div>
 
       <ErrorBanner message={error} className="mb-5" />
 
       {filtered.length === 0 ? (
-        <EmptyState
-          icon={<TasksIcon size={32} />}
-          title="No tasks match these filters"
-          description="Try adjusting your filters or create a new task."
-        />
+        tasks.length === 0 ? (
+          <EmptyState
+            illustration={<TasksEmpty />}
+            title="No tasks yet"
+            description="Create your first task and it'll show up here, grouped by when it's due."
+            action={
+              <Button onClick={openCreateModal}>
+                <PlusIcon size={17} /> Create a task
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState
+            illustration={<SearchEmpty />}
+            title="No tasks match these filters"
+            description="Try a different status or priority, or clear your search."
+            action={
+              <Button variant="outline" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            }
+          />
+        )
       ) : (
         <div className="space-y-8">
           {sections.map(({ key, label, items }) => (

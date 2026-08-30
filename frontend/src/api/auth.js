@@ -14,3 +14,8 @@ export async function getCurrentUser() {
   const { data } = await client.get("/auth/me");
   return data;
 }
+
+export async function updateNotificationPreferences(patch) {
+  const { data } = await client.patch("/auth/preferences", patch);
+  return data.user;
+}
