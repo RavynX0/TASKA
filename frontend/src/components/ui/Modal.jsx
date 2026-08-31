@@ -14,22 +14,32 @@ export default function Modal({ open, onClose, title, children, width = "max-w-l
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div
-        className={`w-full ${width} rounded-card bg-white p-6 shadow-xl`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-ink">{title}</h2>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1.5 text-ink-muted hover:bg-canvas"
-            aria-label="Close"
-          >
-            <XIcon size={18} />
-          </button>
+    // Scroll the whole overlay when the dialog is taller than the viewport
+    // (small screens / long forms) - otherwise the bottom of the form and its
+    // buttons become unreachable.
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/40"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div
+          className={`w-full ${width} rounded-card bg-white shadow-xl`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between border-b border-border-soft px-6 py-4">
+            <h2 className="text-lg font-bold text-ink">{title}</h2>
+            <button
+              onClick={onClose}
+              className="rounded-full p-1.5 text-ink-muted hover:bg-canvas"
+              aria-label="Close"
+            >
+              <XIcon size={18} />
+            </button>
+          </div>
+          <div className="p-6">{children}</div>
         </div>
-        {children}
       </div>
     </div>
   );
