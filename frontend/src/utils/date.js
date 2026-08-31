@@ -28,6 +28,18 @@ export function formatDay(dateInput) {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+// "Today, 4:00 PM" / "Tomorrow, 9:00 AM" / "Sep 3, 2:00 PM" - used wherever a
+// planned working time is shown, so it reads as "when I'll do this".
+export function formatPlanned(dateInput) {
+  if (!dateInput) return null;
+  const date = new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return null;
+  const time = formatTime(date);
+  if (isToday(date)) return `Today, ${time}`;
+  if (isTomorrow(date)) return `Tomorrow, ${time}`;
+  return `${formatDay(date)}, ${time}`;
+}
+
 export function formatWeekdayDate(dateInput) {
   const date = new Date(dateInput);
   return date.toLocaleDateString(undefined, {

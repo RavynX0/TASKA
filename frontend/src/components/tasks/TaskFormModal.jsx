@@ -39,18 +39,18 @@ function formatCountdown(ms) {
   return parts.join(" ");
 }
 
-// Taska calculates the notification time from start + reminder offset - the user
-// should never have to do that math. `now` is passed in so the preview ticks
-// while the modal is open, the way an alarm app counts down.
-function buildSchedulePreview(startTimeLocal, reminderMinutesStr, now) {
-  if (!startTimeLocal) return { kind: "empty" };
-  const start = new Date(startTimeLocal).getTime();
+// Taska calculates the notification time from planned start + reminder offset -
+// the user should never have to do that math. `now` is passed in so the preview
+// ticks while the modal is open, the way an alarm app counts down.
+function buildSchedulePreview(plannedStartLocal, reminderMinutesStr, now) {
+  if (!plannedStartLocal) return { kind: "empty" };
+  const start = new Date(plannedStartLocal).getTime();
   if (Number.isNaN(start)) return { kind: "empty" };
 
   const msToStart = start - now;
   if (msToStart <= 0) return { kind: "past" };
 
-  const startLine = `Starts in ${formatCountdown(msToStart)}`;
+  const startLine = `You plan to start this in ${formatCountdown(msToStart)}`;
   if (reminderMinutesStr === "") return { kind: "ok", startLine, reminderLine: null };
 
   const lead = Number(reminderMinutesStr);
@@ -74,10 +74,11 @@ function makeEmptyForm(defaultReminderMinutes) {
   return {
     title: "",
     description: "",
-    status: "pending",
-    priority: "medium",
+    // Priority and status are required choices - no pre-selected default.
+    status: "",
+    priority: "",
     dueDate: "",
-    startTime: "",
+    plannedStart: "",
     reminderMinutes: String(defaultReminderMinutes),
   };
 }
@@ -111,7 +112,7 @@ export default function TaskFormModal() {
               status: modal.task.status,
               priority: modal.task.priority,
               dueDate: toDateTimeLocal(modal.task.due_date),
-              startTime: toDateTimeLocal(modal.task.start_time),
+              plannedStart: toDateTimeLocal(modal.task.planned_start),
               reminderMinutes:
                 modal.task.reminder_minutes === null || modal.task.reminder_minutes === undefined
                   ? ""
@@ -126,7 +127,7 @@ export default function TaskFormModal() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  const schedulePreview = buildSchedulePreview(form.startTime, form.reminderMinutes, now);
+  const schedulePreview = buildSchedulePreview(form.plannedStart, form.reminderMinutes, now);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -134,8 +135,16 @@ export default function TaskFormModal() {
       setError("Title is required");
       return;
     }
-    if (form.startTime && form.dueDate && new Date(form.dueDate) < new Date(form.startTime)) {
-      setError("Due time can't be before the start time");
+    if (!form.priority) {
+      setError("Choose a priority");
+      return;
+    }
+    if (!form.status) {
+      setError("Choose a status");
+      return;
+    }
+    if (form.plannedStart && form.dueDate && new Date(form.dueDate) < new Date(form.plannedStart)) {
+      setError("The due date can't be before the planned time");
       return;
     }
     setSaving(true);
@@ -146,9 +155,9 @@ export default function TaskFormModal() {
       status: form.status,
       priority: form.priority,
       dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
-      startTime: form.startTime ? new Date(form.startTime).toISOString() : null,
+      plannedStart: form.plannedStart ? new Date(form.plannedStart).toISOString() : null,
       reminderMinutes:
-        form.startTime && form.reminderMinutes !== "" ? Number(form.reminderMinutes) : null,
+        form.plannedStart && form.reminderMinutes !== "" ? Number(form.reminderMinutes) : null,
     };
     try {
       if (isEdit) {
@@ -158,7 +167,7 @@ export default function TaskFormModal() {
         // First scheduled task = the right moment to (softly) ask about
         // notifications. armPrimer only unlocks the in-app primer card; it
         // never triggers the browser prompt on its own.
-        if (payload.startTime) armPrimer();
+        if (payload.plannedStart) armPrimer();
       }
       closeModal();
     } catch (err) {
@@ -185,7 +194,11 @@ export default function TaskFormModal() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <ErrorBanner message={error} />
         <Input
-          label="Title"
+          label={
+            <>
+              Title <span className="text-red-500">*</span>
+            </>
+          }
           name="title"
           placeholder="e.g. Finalize project presentation"
           value={form.title}
@@ -203,51 +216,64 @@ export default function TaskFormModal() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-ink">Priority</label>
+            <label className="mb-1.5 block text-sm font-medium text-ink">
+              Priority <span className="text-red-500">*</span>
+            </label>
             <Select
               variant="field"
               aria-label="Priority"
+              placeholder="Choose priority"
               value={form.priority}
               onChange={(v) => set("priority", v)}
               options={PRIORITY_OPTIONS}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-ink">Status</label>
+            <label className="mb-1.5 block text-sm font-medium text-ink">
+              Status <span className="text-red-500">*</span>
+            </label>
             <Select
               variant="field"
               aria-label="Status"
+              placeholder="Choose status"
               value={form.status}
               onChange={(v) => set("status", v)}
               options={STATUS_OPTIONS}
             />
           </div>
         </div>
-        <div className="rounded-control border border-border-soft bg-canvas/60 p-4">
-          <p className="mb-3 text-sm font-semibold text-ink">Schedule</p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-4 rounded-control border border-border-soft bg-canvas/60 p-4">
+          <p className="text-sm font-semibold text-ink">Timing</p>
+          <div>
+            <label className="block text-sm font-medium text-ink">Planned time</label>
+            <p className="mb-1.5 text-xs text-ink-faint">When you want to work on it.</p>
             <Input
-              label="Start"
               type="datetime-local"
-              value={form.startTime}
-              onChange={(e) => set("startTime", e.target.value)}
+              value={form.plannedStart}
+              onChange={(e) => set("plannedStart", e.target.value)}
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-ink">Due date</label>
+            <p className="mb-1.5 text-xs text-ink-faint">When it needs to be finished.</p>
             <Input
-              label="Due"
               type="datetime-local"
               value={form.dueDate}
               onChange={(e) => set("dueDate", e.target.value)}
             />
           </div>
-          <div className="mt-4">
-            <label className="mb-1.5 block text-sm font-medium text-ink">Reminder</label>
+          <div>
+            <label className="block text-sm font-medium text-ink">Reminder</label>
+            <p className="mb-1.5 text-xs text-ink-faint">
+              When you want Taska to remind you (before the planned time).
+            </p>
             <Select
               variant="field"
               aria-label="Reminder"
               value={form.reminderMinutes}
               onChange={(v) => set("reminderMinutes", v)}
               options={REMINDER_OPTIONS}
-              disabled={!form.startTime}
+              disabled={!form.plannedStart}
             />
           </div>
           {schedulePreview.kind === "ok" && (
@@ -267,12 +293,12 @@ export default function TaskFormModal() {
           {schedulePreview.kind === "past" && (
             <p className="mt-3 flex items-start gap-1.5 text-xs text-amber-600">
               <ClockIcon size={14} className="mt-0.5 shrink-0" />
-              That start time has already passed, pick a time in the future to get a reminder.
+              That planned time has already passed, pick a time in the future to get a reminder.
             </p>
           )}
           {schedulePreview.kind === "empty" && (
             <p className="mt-3 text-xs text-ink-muted">
-              Add a start time to get a reminder and a start-time nudge for this task.
+              Add a planned time to get a reminder and a nudge when it's time to start.
             </p>
           )}
         </div>

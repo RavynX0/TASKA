@@ -1,13 +1,13 @@
 import { PriorityBadge } from "../ui/Badge";
-import { ClockIcon, BellIcon } from "../icons";
+import { ClockIcon, CalendarIcon, BellIcon } from "../icons";
 import StatusMenu from "./StatusMenu";
-import { formatTime } from "../../utils/date";
+import { formatDay, formatPlanned } from "../../utils/date";
 import { useTasks } from "../../context/TasksContext";
 
 export default function TaskCard({ task }) {
   const { changeStatus, openEditModal } = useTasks();
   const isDone = task.status === "completed";
-  const hasRange = task.start_time || task.due_date;
+  const hasTiming = task.planned_start || task.due_date;
 
   function onKeyDown(e) {
     if (e.key === "Enter" || e.key === " ") {
@@ -39,16 +39,22 @@ export default function TaskCard({ task }) {
         <p className="mt-1.5 line-clamp-2 text-sm text-ink-muted">{task.description}</p>
       )}
 
-      {hasRange && (
-        <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-ink-muted">
-          <ClockIcon size={14} />
-          {task.start_time && formatTime(task.start_time)}
-          {task.start_time && task.due_date && " → "}
-          {task.due_date && formatTime(task.due_date)}
+      {hasTiming && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-ink-muted">
+          {task.planned_start && (
+            <span className="flex items-center gap-1.5">
+              <ClockIcon size={14} /> Planned: {formatPlanned(task.planned_start)}
+            </span>
+          )}
+          {task.due_date && (
+            <span className="flex items-center gap-1.5">
+              <CalendarIcon size={14} /> Due: {formatDay(task.due_date)}
+            </span>
+          )}
         </div>
       )}
 
-      {task.start_time && task.reminder_minutes != null && (
+      {task.planned_start && task.reminder_minutes != null && (
         <div className="mt-1.5 flex items-center gap-1.5 text-xs text-primary">
           <BellIcon size={13} />
           Reminder set

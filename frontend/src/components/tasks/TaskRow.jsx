@@ -1,5 +1,5 @@
 import { CheckIcon, TasksIcon } from "../icons";
-import { formatTime } from "../../utils/date";
+import { formatDay, formatPlanned } from "../../utils/date";
 import { useTasks } from "../../context/TasksContext";
 import StatusMenu from "./StatusMenu";
 
@@ -14,7 +14,7 @@ export default function TaskRow({ task }) {
   const { changeStatus, openEditModal } = useTasks();
   const isDone = task.status === "completed";
   const style = AVATAR_STYLES[task.id % AVATAR_STYLES.length];
-  const hasRange = task.start_time || task.due_date;
+  const hasTiming = task.planned_start || task.due_date;
 
   function onKeyDown(e) {
     if (e.key === "Enter" || e.key === " ") {
@@ -42,11 +42,11 @@ export default function TaskRow({ task }) {
         <p className={`truncate text-[15px] font-semibold ${isDone ? "text-ink-faint line-through" : "text-ink"}`}>
           {task.title}
         </p>
-        {hasRange ? (
+        {hasTiming ? (
           <p className="truncate text-sm text-ink-muted">
-            {task.start_time && formatTime(task.start_time)}
-            {task.start_time && task.due_date && " → "}
-            {task.due_date && formatTime(task.due_date)}
+            {task.planned_start && `Planned ${formatPlanned(task.planned_start)}`}
+            {task.planned_start && task.due_date && " · "}
+            {task.due_date && `Due ${formatDay(task.due_date)}`}
           </p>
         ) : (
           task.description && <p className="truncate text-sm text-ink-muted">{task.description}</p>

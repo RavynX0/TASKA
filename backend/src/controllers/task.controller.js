@@ -3,7 +3,7 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 
 const createTask = asyncHandler(async (req, res) => {
-  const { title, description, status, priority, dueDate, startTime, reminderMinutes } = req.body;
+  const { title, description, status, priority, dueDate, plannedStart, reminderMinutes } = req.body;
 
   const task = await taskModel.createTask({
     userId: req.user.id,
@@ -12,7 +12,7 @@ const createTask = asyncHandler(async (req, res) => {
     status,
     priority,
     dueDate,
-    startTime,
+    plannedStart,
     reminderMinutes,
   });
 
@@ -40,7 +40,7 @@ const updateTask = asyncHandler(async (req, res) => {
     status,
     priority,
     dueDate,
-    startTime,
+    plannedStart,
     reminderMinutes,
     snoozeUntil,
     muteCheckins,
@@ -51,15 +51,13 @@ const updateTask = asyncHandler(async (req, res) => {
     throw new AppError(404, "Task not found");
   }
 
-  // Setting a start time with no explicit reminder gets the default lead time.
-  const resolvedReminder =
-    startTime !== undefined && startTime !== null && reminderMinutes === undefined
-      ? 10
-      : reminderMinutes;
+  // Reminders are always explicit - dragging a task onto a time slot sets only
+  // planned_start, never a reminder. Clearing the planned time clears any reminder.
+  const resolvedReminder = plannedStart === null ? null : reminderMinutes;
 
-  // Rescheduling clears every "already notified"/snooze flag so the full
-  // start -> reminder -> due cycle can run again for the new time.
-  const reschedule = startTime !== undefined || reminderMinutes !== undefined;
+  // Re-planning clears every "already notified"/snooze flag so the full
+  // planned-start -> reminder -> due cycle can run again for the new time.
+  const reschedule = plannedStart !== undefined || reminderMinutes !== undefined;
 
   let snoozeCount;
   let resolvedSnoozeUntil = snoozeUntil;
@@ -77,7 +75,7 @@ const updateTask = asyncHandler(async (req, res) => {
     status,
     priority,
     due_date: dueDate,
-    start_time: startTime,
+    planned_start: plannedStart,
     reminder_minutes: resolvedReminder,
     reminder_sent_at: reschedule ? null : undefined,
     start_notified_at: reschedule ? null : undefined,

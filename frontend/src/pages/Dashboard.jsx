@@ -7,8 +7,8 @@ import Button from "../components/ui/Button";
 import EmptyState from "../components/ui/EmptyState";
 import { TasksEmpty, AllClearEmpty, CalendarEmpty } from "../components/ui/EmptyIllustrations";
 import TaskRow from "../components/tasks/TaskRow";
-import { ClockIcon, PlusIcon, CheckIcon, MoreHorizontalIcon } from "../components/icons";
-import { formatTime, greetingForNow, groupTasksByDate } from "../utils/date";
+import { ClockIcon, CalendarIcon, PlusIcon, CheckIcon, MoreHorizontalIcon } from "../components/icons";
+import { formatTime, formatDay, formatPlanned, greetingForNow, groupTasksByDate } from "../utils/date";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -81,13 +81,19 @@ export default function Dashboard() {
               {nextUp.description && (
                 <p className="mt-1 max-w-md text-sm text-white/60">{nextUp.description}</p>
               )}
-              {(nextUp.start_time || nextUp.due_date) && (
-                <p className="mt-3 flex items-center gap-1.5 text-sm text-white/70">
-                  <ClockIcon size={15} />
-                  {nextUp.start_time && formatTime(nextUp.start_time)}
-                  {nextUp.start_time && nextUp.due_date && " → "}
-                  {nextUp.due_date && formatTime(nextUp.due_date)}
-                </p>
+              {(nextUp.planned_start || nextUp.due_date) && (
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-white/70">
+                  {nextUp.planned_start && (
+                    <span className="flex items-center gap-1.5">
+                      <ClockIcon size={15} /> Planned: {formatPlanned(nextUp.planned_start)}
+                    </span>
+                  )}
+                  {nextUp.due_date && (
+                    <span className="flex items-center gap-1.5">
+                      <CalendarIcon size={15} /> Due: {formatDay(nextUp.due_date)}
+                    </span>
+                  )}
+                </div>
               )}
               <div className="mt-6 flex items-center gap-3">
                 <Button

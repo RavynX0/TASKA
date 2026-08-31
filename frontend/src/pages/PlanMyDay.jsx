@@ -22,14 +22,18 @@ export default function PlanMyDay() {
   const [savingId, setSavingId] = useState(null);
 
   const incomplete = tasks.filter((t) => t.status !== "completed");
-  const inbox = incomplete.filter((t) => !t.due_date);
-  const scheduledToday = incomplete.filter((t) => t.due_date && isToday(new Date(t.due_date)));
+  // Inbox = anything not yet given a planned time. Having a due date does NOT
+  // pull a task out of the inbox - the user still decides when to work on it.
+  const inbox = incomplete.filter((t) => !t.planned_start);
+  const scheduledToday = incomplete.filter(
+    (t) => t.planned_start && isToday(new Date(t.planned_start))
+  );
 
   const byHour = useMemo(() => {
     const map = {};
     for (const hour of HOURS) map[hour] = [];
     for (const task of scheduledToday) {
-      const hour = new Date(task.due_date).getHours();
+      const hour = new Date(task.planned_start).getHours();
       if (map[hour]) map[hour].push(task);
       else if (hour < HOURS[0]) map[HOURS[0]].push(task);
       else map[HOURS[HOURS.length - 1]].push(task);
@@ -39,12 +43,14 @@ export default function PlanMyDay() {
 
   if (isLoading) return <PageLoader />;
 
+  // Dragging only ever sets planned_start (today at the chosen hour). It never
+  // touches due_date, reminders, or any other task property.
   async function scheduleAt(taskId, hour) {
     setSavingId(taskId);
     const date = new Date();
     date.setHours(hour, 0, 0, 0);
     try {
-      await editTask(taskId, { dueDate: date.toISOString() });
+      await editTask(taskId, { plannedStart: date.toISOString() });
     } catch {
       // surfaced via context error state
     } finally {
@@ -56,7 +62,7 @@ export default function PlanMyDay() {
   async function unschedule(taskId) {
     setSavingId(taskId);
     try {
-      await editTask(taskId, { dueDate: null });
+      await editTask(taskId, { plannedStart: null });
     } finally {
       setSavingId(null);
       setDragTaskId(null);
@@ -65,9 +71,10 @@ export default function PlanMyDay() {
 
   async function handleReadyToStart() {
     const first = [...scheduledToday].sort(
-      (a, b) => new Date(a.due_date) - new Date(b.due_date)
+      (a, b) => new Date(a.planned_start) - new Date(b.planned_start)
     )[0];
-    if (first) await changeStatus(first.id, "in_progress");
+    if (!first) return;
+    await changeStatus(first.id, "in_progress");
     navigate("/dashboard");
   }
 
@@ -75,8 +82,10 @@ export default function PlanMyDay() {
     <div>
       <div className="mb-7 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-[26px] font-bold leading-tight text-ink">Plan My Day</h1>
-          <p className="mt-1 text-sm text-ink-muted">Drag tasks onto a time slot to build your schedule.</p>
+          <h1 className="text-[26px] font-bold leading-tight text-ink">Plan your day</h1>
+          <p className="mt-1 text-sm text-ink-muted">
+            Drag tasks to a time slot to choose when you want to work on them today.
+          </p>
         </div>
       </div>
 
@@ -88,12 +97,13 @@ export default function PlanMyDay() {
           onDrop={() => dragTaskId && unschedule(dragTaskId)}
           className="rounded-card bg-white p-4 shadow-sm"
         >
-          <h2 className="mb-3 flex items-center gap-2 text-[15px] font-bold text-ink">
+          <h2 className="flex items-center gap-2 text-[15px] font-bold text-ink">
             Inbox
             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-ink-muted">
               {inbox.length}
             </span>
           </h2>
+          <p className="mb-3 mt-0.5 text-xs text-ink-muted">Tasks waiting to be scheduled.</p>
           {inbox.length === 0 ? (
             <p className="text-sm text-ink-muted">Everything is scheduled. Nice.</p>
           ) : (
@@ -120,7 +130,7 @@ export default function PlanMyDay() {
         </div>
 
         <div className="rounded-card bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-1 flex items-center justify-between">
             <h2 className="text-[15px] font-bold text-ink">
               Today ·{" "}
               {new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
@@ -129,6 +139,9 @@ export default function PlanMyDay() {
               {scheduledToday.length} scheduled
             </span>
           </div>
+          <p className="mb-3 text-xs text-ink-muted">
+            Your tasks, organized by when you plan to work on them.
+          </p>
 
           <div className="divide-y divide-border-soft">
             {HOURS.map((hour) => (
@@ -168,6 +181,13 @@ export default function PlanMyDay() {
               </div>
             ))}
           </div>
+
+          {scheduledToday.length === 0 && (
+            <p className="mt-4 rounded-control bg-canvas px-3.5 py-3 text-sm text-ink-muted">
+              <span className="font-semibold text-ink">Your day isn't planned yet.</span>{" "}
+              Schedule a task to a time slot to get started.
+            </p>
+          )}
 
           <div className="mt-5 flex justify-end">
             <Button onClick={handleReadyToStart} disabled={scheduledToday.length === 0}>

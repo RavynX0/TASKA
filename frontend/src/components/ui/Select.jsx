@@ -13,6 +13,7 @@ export default function Select({
   options,
   variant = "pill",
   disabled = false,
+  placeholder = "",
   className = "",
   "aria-label": ariaLabel,
 }) {
@@ -20,7 +21,10 @@ export default function Select({
   const [active, setActive] = useState(0);
   const ref = useRef(null);
 
-  const selected = options.find((o) => o.value === value) || options[0];
+  const match = options.find((o) => o.value === value);
+  // With a placeholder, an unmatched value stays unselected (required fields);
+  // without one, fall back to the first option (filter pills always have a value).
+  const selected = match || (placeholder ? null : options[0]);
   const isField = variant === "field";
 
   useEffect(() => {
@@ -77,7 +81,9 @@ export default function Select({
         onKeyDown={onKeyDown}
         className={`${triggerBase} ${triggerShape}`}
       >
-        <span className="truncate">{selected?.label}</span>
+        <span className={`truncate ${selected ? "" : "text-ink-faint"}`}>
+          {selected ? selected.label : placeholder}
+        </span>
         <ChevronDownIcon
           size={14}
           className={`shrink-0 text-ink-muted transition-transform ${open ? "rotate-180" : ""}`}

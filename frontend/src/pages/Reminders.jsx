@@ -43,7 +43,7 @@ export default function Reminders() {
             <EmptyState
               illustration={<AllClearEmpty />}
               title="No reminders for today"
-              description="You're all clear. Schedule a task with a start time and it'll show up here."
+              description="You're all clear. Give a task a due date and it'll show up here."
               action={
                 <Button onClick={openCreateModal}>
                   <PlusIcon size={17} /> New reminder
