@@ -65,7 +65,7 @@ function buildSchedulePreview(startTimeLocal, reminderMinutesStr, now) {
   } else if (notifyAt <= now) {
     reminderLine = "Taska will notify you as soon as you save";
   } else {
-    reminderLine = `Reminder in ${formatCountdown(notifyAt - now)} — around ${clock}`;
+    reminderLine = `Reminder in ${formatCountdown(notifyAt - now)}, around ${clock}`;
   }
   return { kind: "ok", startLine, reminderLine };
 }
@@ -267,7 +267,7 @@ export default function TaskFormModal() {
           {schedulePreview.kind === "past" && (
             <p className="mt-3 flex items-start gap-1.5 text-xs text-amber-600">
               <ClockIcon size={14} className="mt-0.5 shrink-0" />
-              That start time has already passed — pick a time in the future to get a reminder.
+              That start time has already passed, pick a time in the future to get a reminder.
             </p>
           )}
           {schedulePreview.kind === "empty" && (

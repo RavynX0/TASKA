@@ -5,6 +5,7 @@ import GuestRoute from "./routes/GuestRoute";
 import AppLayout from "./components/layout/AppLayout";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
+import VerifyEmail from "./pages/VerifyEmail";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Reminders from "./pages/Reminders";
@@ -40,6 +41,14 @@ function AppShell() {
           />
           <Route path="/signup" element={null} />
           <Route path="/login" element={null} />
+          <Route
+            path="/verify-email"
+            element={
+              <GuestRoute>
+                <VerifyEmail />
+              </GuestRoute>
+            }
+          />
 
           <Route
             element={

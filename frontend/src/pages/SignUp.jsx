@@ -35,9 +35,10 @@ export default function SignUp() {
     setSubmitError(null);
     if (!validate()) return;
     setLoading(true);
+    const email = form.email.trim();
     try {
-      await register({ name: form.name.trim(), email: form.email.trim(), password: form.password });
-      navigate("/dashboard", { replace: true });
+      await register({ name: form.name.trim(), email, password: form.password });
+      navigate("/verify-email", { replace: true, state: { email } });
     } catch (err) {
       setSubmitError(err.message);
     } finally {

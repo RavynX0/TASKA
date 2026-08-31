@@ -47,17 +47,36 @@ export function AuthProvider({ children }) {
     return updated;
   }
 
+  // Registration no longer starts a session - it just kicks off email
+  // verification. The caller routes the user to the Verify Email screen.
   async function register(details) {
-    const { user, token } = await authApi.register(details);
+    return authApi.register(details);
+  }
+
+  async function verifyEmail({ email, code }) {
+    const { user, token } = await authApi.verifyEmail({ email, code });
     localStorage.setItem("taska_token", token);
     setStoredToken(token).catch(() => {});
     setUser(user);
     return user;
   }
 
+  async function resendVerification(email) {
+    return authApi.resendVerification(email);
+  }
+
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, login, register, logout, updateNotificationPreferences }}
+      value={{
+        user,
+        isLoading,
+        login,
+        register,
+        verifyEmail,
+        resendVerification,
+        logout,
+        updateNotificationPreferences,
+      }}
     >
       {children}
     </AuthContext.Provider>

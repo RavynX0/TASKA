@@ -115,7 +115,7 @@ export default function NotificationSettings() {
 
         {status === STATUS.NOT_SUPPORTED && (
           <p className="mt-3 rounded-control bg-canvas px-3.5 py-2.5 text-sm text-ink-muted">
-            This browser doesn't support notifications. Taska works fine without them — your
+            This browser doesn't support notifications. Taska works fine without them, your
             dashboard always has the latest.
           </p>
         )}
@@ -139,7 +139,7 @@ export default function NotificationSettings() {
           <>
             <p className="mt-3 text-sm text-ink-muted">
               Browser notifications are currently off. Turn them on to get a reminder when a
-              scheduled task is about to start — delivered even when Taska is closed.
+              scheduled task is about to start, delivered even when Taska is closed.
             </p>
             <Button size="sm" className="mt-3" onClick={enable} loading={loading}>
               Enable notifications
@@ -216,7 +216,7 @@ export default function NotificationSettings() {
             {testResult?.kind === "sent" && (
               <div className="mt-2 space-y-1 text-xs">
                 <p className="flex items-center gap-1.5 font-medium text-green-700">
-                  <CheckIcon size={13} /> Sent — Taska has {testResult.testCount || 1} test
+                  <CheckIcon size={13} /> Sent, Taska has {testResult.testCount || 1} test
                   notification{(testResult.testCount || 1) === 1 ? "" : "s"} active on this device.
                 </p>
                 <p className="text-ink-muted">
