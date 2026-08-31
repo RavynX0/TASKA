@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { HomeIcon, TasksIcon, CalendarIcon, BellIcon, UserIcon, PlusIcon, LogOutIcon, XIcon } from "../icons";
 import Logo from "../Logo";
+import ConfirmDialog from "../ui/ConfirmDialog";
 import { useAuth } from "../../context/AuthContext";
 import { useTasks } from "../../context/TasksContext";
 
@@ -24,6 +26,7 @@ function initials(name = "") {
 export default function Sidebar({ open = false, onClose = () => {} }) {
   const { user, logout } = useAuth();
   const { openCreateModal } = useTasks();
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   return (
     <>
@@ -95,7 +98,7 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
             <p className="truncate text-sm font-semibold text-ink">{user?.name}</p>
           </div>
           <button
-            onClick={logout}
+            onClick={() => setConfirmLogout(true)}
             className="rounded-lg p-2 text-ink-faint hover:bg-canvas hover:text-ink"
             aria-label="Log out"
             title="Log out"
@@ -104,6 +107,16 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
           </button>
         </div>
       </aside>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        onClose={() => setConfirmLogout(false)}
+        onConfirm={logout}
+        title="Log out?"
+        message="You'll need to sign in again to get back to your tasks."
+        confirmLabel="Log out"
+        destructive
+      />
     </>
   );
 }

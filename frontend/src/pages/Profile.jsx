@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useTasks } from "../context/TasksContext";
 import Button from "../components/ui/Button";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 import NotificationSettings from "../notifications/NotificationSettings";
 import { UserIcon, LogOutIcon, CheckIcon, ClockIcon } from "../components/icons";
 
@@ -16,6 +18,7 @@ function initials(name = "") {
 export default function Profile() {
   const { user, logout } = useAuth();
   const { tasks } = useTasks();
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   const completed = tasks.filter((t) => t.status === "completed").length;
   const pending = tasks.filter((t) => t.status !== "completed").length;
@@ -71,11 +74,25 @@ export default function Profile() {
         </div>
 
         <div className="mt-6 border-t border-border-soft pt-6">
-          <Button variant="outline" className="text-red-500 hover:bg-red-50" onClick={logout}>
+          <Button
+            variant="outline"
+            className="text-red-500 hover:bg-red-50"
+            onClick={() => setConfirmLogout(true)}
+          >
             <LogOutIcon size={17} /> Log out
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        onClose={() => setConfirmLogout(false)}
+        onConfirm={logout}
+        title="Log out?"
+        message="You'll need to sign in again to get back to your tasks."
+        confirmLabel="Log out"
+        destructive
+      />
     </div>
   );
 }
