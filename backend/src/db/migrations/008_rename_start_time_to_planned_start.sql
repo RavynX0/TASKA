@@ -1,0 +1,12 @@
+-- Clarify the scheduling model: the timestamp for "when the user plans to work
+-- on this task" was called start_time, which read like a deadline / duration
+-- field and got confused with due_date. Rename it to planned_start.
+--
+--   planned_start  = when the user intends to work on the task (Plan My Day)
+--   due_date       = the actual deadline
+--   reminder_minutes = lead time before planned_start for the notification
+--
+-- All existing start_time values already meant "planned work time", so a plain
+-- rename preserves them. reminder_sent_at / start_notified_at keep their names
+-- (they are notification-state flags, not the planned time itself).
+ALTER TABLE tasks RENAME COLUMN start_time TO planned_start;

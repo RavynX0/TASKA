@@ -7,12 +7,13 @@ async function createTask({
   status,
   priority,
   dueDate,
-  startTime,
+  plannedStart,
   reminderMinutes,
 }) {
-  const resolvedReminder = startTime ? reminderMinutes ?? 10 : null;
+  // A reminder is meaningless without a planned time to count back from.
+  const resolvedReminder = plannedStart ? reminderMinutes ?? null : null;
   const result = await db.query(
-    `INSERT INTO tasks (user_id, title, description, status, priority, due_date, start_time, reminder_minutes)
+    `INSERT INTO tasks (user_id, title, description, status, priority, due_date, planned_start, reminder_minutes)
      VALUES ($1, $2, $3, COALESCE($4::task_status, 'pending'), COALESCE($5::task_priority, 'medium'), $6, $7, $8)
      RETURNING *`,
     [
@@ -22,7 +23,7 @@ async function createTask({
       status,
       priority,
       dueDate ?? null,
-      startTime ?? null,
+      plannedStart ?? null,
       resolvedReminder,
     ]
   );
@@ -65,7 +66,7 @@ async function updateForUser(id, userId, fields) {
     "status",
     "priority",
     "due_date",
-    "start_time",
+    "planned_start",
     "reminder_minutes",
     "reminder_sent_at",
     "start_notified_at",
@@ -108,17 +109,17 @@ async function deleteForUser(id, userId) {
 }
 
 // Reminders due right now, across all users - used by the background scheduler.
-// Bounded to an hour past start_time so a long backend outage doesn't dump a
+// Bounded to an hour past planned_start so a long backend outage doesn't dump a
 // backlog of stale pushes once it comes back up.
 async function findDueReminders() {
   const result = await db.query(
     `SELECT * FROM tasks
-     WHERE start_time IS NOT NULL
+     WHERE planned_start IS NOT NULL
        AND reminder_minutes IS NOT NULL
        AND reminder_sent_at IS NULL
        AND status != 'completed'
-       AND now() >= start_time - (reminder_minutes || ' minutes')::interval
-       AND now() < start_time + interval '1 hour'`
+       AND now() >= planned_start - (reminder_minutes || ' minutes')::interval
+       AND now() < planned_start + interval '1 hour'`
   );
   return result.rows;
 }
@@ -132,7 +133,7 @@ async function markReminderSent(id) {
 const FOLLOW_UP_AFTER = "30 minutes";
 
 // Tasks that need a "start now" nudge. Three ways in:
-//   1. the first ping, right at start_time (start_notified_at IS NULL)
+//   1. the first ping, right at planned_start (start_notified_at IS NULL)
 //   2. a snooze the user explicitly asked for has come due
 //   3. the first ping was ignored (not snoozed) and FOLLOW_UP_AFTER has passed
 //      - this is the one automatic follow-up
@@ -141,11 +142,11 @@ async function findDueStartCheckins() {
   const result = await db.query(
     `SELECT * FROM tasks
      WHERE status = 'pending'
-       AND start_time IS NOT NULL
+       AND planned_start IS NOT NULL
        AND snooze_count >= 0
-       AND now() < start_time + interval '6 hours'
+       AND now() < planned_start + interval '6 hours'
        AND (
-         (start_notified_at IS NULL AND now() >= start_time)
+         (start_notified_at IS NULL AND now() >= planned_start)
          OR (snooze_until IS NOT NULL AND now() >= snooze_until)
          OR (
            start_notified_at IS NOT NULL

@@ -17,7 +17,7 @@ function validateId(req, res, next) {
 }
 
 function validateCreateTask(req, res, next) {
-  const { title, description, status, priority, dueDate, startTime, reminderMinutes } =
+  const { title, description, status, priority, dueDate, plannedStart, reminderMinutes } =
     req.body || {};
   const errors = [];
 
@@ -43,8 +43,8 @@ function validateCreateTask(req, res, next) {
     errors.push("dueDate must be a valid date");
   }
 
-  if (startTime !== undefined && startTime !== null && !isValidDate(startTime)) {
-    errors.push("startTime must be a valid date");
+  if (plannedStart !== undefined && plannedStart !== null && !isValidDate(plannedStart)) {
+    errors.push("plannedStart must be a valid date");
   }
 
   if (
@@ -68,7 +68,7 @@ function validateUpdateTask(req, res, next) {
     status,
     priority,
     dueDate,
-    startTime,
+    plannedStart,
     reminderMinutes,
     snoozeUntil,
     muteCheckins,
@@ -93,8 +93,8 @@ function validateUpdateTask(req, res, next) {
   if (dueDate !== undefined && dueDate !== null && !isValidDate(dueDate)) {
     errors.push("dueDate must be a valid date");
   }
-  if (startTime !== undefined && startTime !== null && !isValidDate(startTime)) {
-    errors.push("startTime must be a valid date");
+  if (plannedStart !== undefined && plannedStart !== null && !isValidDate(plannedStart)) {
+    errors.push("plannedStart must be a valid date");
   }
   if (
     reminderMinutes !== undefined &&

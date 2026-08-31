@@ -17,7 +17,7 @@ async function seedTask(userId, overrides = {}) {
     user_id: userId,
     title: "Physics",
     status: "pending",
-    start_time: null,
+    planned_start: null,
     due_date: null,
     reminder_minutes: null,
     reminder_sent_at: null,
@@ -84,7 +84,7 @@ describe("Notification lifecycle (scheduler)", () => {
 
   test("start-time nudge fires once and does not repeat", async () => {
     const t = await seedTask(user.id);
-    await db.query("UPDATE tasks SET start_time = now() - interval '2 minutes' WHERE id = $1", [t.id]);
+    await db.query("UPDATE tasks SET planned_start = now() - interval '2 minutes' WHERE id = $1", [t.id]);
 
     await processDueReminders();
     const afterFirst = await reload(t.id);
@@ -99,7 +99,7 @@ describe("Notification lifecycle (scheduler)", () => {
   test("an ignored start nudge produces exactly one follow-up", async () => {
     const t = await seedTask(user.id);
     await db.query(
-      "UPDATE tasks SET start_time = now() - interval '1 hour', start_notified_at = now() - interval '31 minutes' WHERE id = $1",
+      "UPDATE tasks SET planned_start = now() - interval '1 hour', start_notified_at = now() - interval '31 minutes' WHERE id = $1",
       [t.id]
     );
 
@@ -113,7 +113,7 @@ describe("Notification lifecycle (scheduler)", () => {
 
   test("Skip (muteCheckins) stops the start cycle", async () => {
     const t = await seedTask(user.id, { snooze_count: -1 });
-    await db.query("UPDATE tasks SET start_time = now() - interval '5 minutes' WHERE id = $1", [t.id]);
+    await db.query("UPDATE tasks SET planned_start = now() - interval '5 minutes' WHERE id = $1", [t.id]);
 
     await processDueReminders();
     expect((await reload(t.id)).start_notified_at).toBeNull();
@@ -121,7 +121,7 @@ describe("Notification lifecycle (scheduler)", () => {
 
   test("in_progress tasks get no start nudge", async () => {
     const t = await seedTask(user.id, { status: "in_progress" });
-    await db.query("UPDATE tasks SET start_time = now() - interval '5 minutes' WHERE id = $1", [t.id]);
+    await db.query("UPDATE tasks SET planned_start = now() - interval '5 minutes' WHERE id = $1", [t.id]);
 
     await processDueReminders();
     expect((await reload(t.id)).start_notified_at).toBeNull();
@@ -154,7 +154,7 @@ describe("Notification lifecycle (scheduler)", () => {
       .send({ startTimeNotifications: false });
 
     const t = await seedTask(user.id);
-    await db.query("UPDATE tasks SET start_time = now() - interval '5 minutes' WHERE id = $1", [t.id]);
+    await db.query("UPDATE tasks SET planned_start = now() - interval '5 minutes' WHERE id = $1", [t.id]);
 
     await processDueReminders();
     expect((await reload(t.id)).start_notified_at).not.toBeNull();
@@ -167,7 +167,7 @@ describe("Notification lifecycle (scheduler)", () => {
       .send({ startTimeNotifications: false });
 
     const t = await seedTask(user.id, { reminder_minutes: 10 });
-    await db.query("UPDATE tasks SET start_time = now() + interval '5 minutes' WHERE id = $1", [t.id]);
+    await db.query("UPDATE tasks SET planned_start = now() + interval '5 minutes' WHERE id = $1", [t.id]);
 
     await processDueReminders();
     const after = await reload(t.id);
@@ -194,14 +194,14 @@ describe("Notification lifecycle (scheduler)", () => {
   test("reschedule via API clears the notification flags", async () => {
     const t = await seedTask(user.id, { snooze_count: 2 });
     await db.query(
-      "UPDATE tasks SET start_time = now() - interval '1 hour', start_notified_at = now(), due_notified_at = now() WHERE id = $1",
+      "UPDATE tasks SET planned_start = now() - interval '1 hour', start_notified_at = now(), due_notified_at = now() WHERE id = $1",
       [t.id]
     );
 
     const res = await request(app)
       .patch(`/tasks/${t.id}`)
       .set("Authorization", `Bearer ${user.token}`)
-      .send({ startTime: new Date(Date.now() + 3600_000).toISOString() });
+      .send({ plannedStart: new Date(Date.now() + 3600_000).toISOString() });
 
     expect(res.status).toBe(200);
     const after = await reload(t.id);
