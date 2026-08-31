@@ -12,6 +12,7 @@ export default function SignIn() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [needsVerify, setNeedsVerify] = useState(false);
   const [forgotNote, setForgotNote] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -22,6 +23,7 @@ export default function SignIn() {
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitError(null);
+    setNeedsVerify(false);
     if (!form.email.trim() || !form.password) {
       setSubmitError("Enter your email and password");
       return;
@@ -31,7 +33,12 @@ export default function SignIn() {
       await login({ email: form.email.trim(), password: form.password });
       navigate("/dashboard", { replace: true });
     } catch (err) {
-      setSubmitError(err.message);
+      if (err.status === 403) {
+        setSubmitError("Please verify your email before logging in.");
+        setNeedsVerify(true);
+      } else {
+        setSubmitError(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -80,8 +87,21 @@ export default function SignIn() {
         />
         {forgotNote && (
           <p className="text-xs text-ink-muted">
-            Password reset isn't available yet — contact support to regain access.
+            Password reset isn't available yet, contact support to regain access.
           </p>
+        )}
+        {needsVerify && (
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/verify-email", {
+                state: { email: form.email.trim(), fromLogin: true },
+              })
+            }
+            className="w-full text-center text-sm font-medium text-primary hover:underline"
+          >
+            Verify your email now →
+          </button>
         )}
         <Button type="submit" className="w-full" loading={loading}>
           Log In

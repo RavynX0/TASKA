@@ -1,7 +1,7 @@
 const db = require("../config/db");
 
 const PUBLIC_COLUMNS =
-  "id, name, email, notification_preferences, created_at, updated_at";
+  "id, name, email, email_verified, notification_preferences, created_at, updated_at";
 
 // Server-enforced notification toggles and their defaults. Anything the client
 // sends that isn't in here is ignored; anything missing falls back to `true`.
@@ -31,6 +31,17 @@ async function findById(id) {
   return result.rows[0] || null;
 }
 
+async function markEmailVerified(id) {
+  const result = await db.query(
+    `UPDATE users
+     SET email_verified = true, updated_at = now()
+     WHERE id = $1
+     RETURNING ${PUBLIC_COLUMNS}`,
+    [id]
+  );
+  return result.rows[0] || null;
+}
+
 function resolvePreferences(raw) {
   return { ...PREFERENCE_DEFAULTS, ...(raw || {}) };
 }
@@ -55,6 +66,7 @@ module.exports = {
   createUser,
   findByEmail,
   findById,
+  markEmailVerified,
   updatePreferences,
   resolvePreferences,
   PREFERENCE_DEFAULTS,

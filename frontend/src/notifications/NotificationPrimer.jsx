@@ -42,7 +42,7 @@ export default function NotificationPrimer() {
           <div className="min-w-0">
             <p className="text-[15px] font-bold text-ink">Want Taska to remind you?</p>
             <p className="mt-1 text-sm text-ink-muted">
-              Get a gentle notification when a scheduled task is about to start — even when Taska
+              Get a gentle notification when a scheduled task is about to start, even when Taska
               isn't the tab you're looking at.
             </p>
           </div>

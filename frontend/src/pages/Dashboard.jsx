@@ -137,7 +137,7 @@ export default function Dashboard() {
             <EmptyState
               illustration={<AllClearEmpty />}
               title="No more tasks for today"
-              description="Enjoy the calm — or line up what's next."
+              description="Enjoy the calm, or line up what's next."
               action={
                 <Link to="/plan-my-day">
                   <Button variant="outline">Plan my day</Button>

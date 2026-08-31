@@ -39,4 +39,36 @@ function validateLogin(req, res, next) {
   next();
 }
 
-module.exports = { validateRegister, validateLogin };
+function validateVerifyEmail(req, res, next) {
+  const { email, code } = req.body || {};
+  const errors = [];
+
+  if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email)) {
+    errors.push("a valid email is required");
+  }
+  if (!code || typeof code !== "string" || !/^\d{6}$/.test(code.trim())) {
+    errors.push("a 6-digit code is required");
+  }
+
+  if (errors.length > 0) {
+    return next(new AppError(400, "Validation failed", errors));
+  }
+  req.body.code = code.trim();
+  next();
+}
+
+function validateResendVerification(req, res, next) {
+  const { email } = req.body || {};
+
+  if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email)) {
+    return next(new AppError(400, "Validation failed", ["a valid email is required"]));
+  }
+  next();
+}
+
+module.exports = {
+  validateRegister,
+  validateLogin,
+  validateVerifyEmail,
+  validateResendVerification,
+};

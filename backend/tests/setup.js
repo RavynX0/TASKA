@@ -8,7 +8,9 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await pool.query("TRUNCATE TABLE tasks, users RESTART IDENTITY CASCADE");
+  await pool.query(
+    "TRUNCATE TABLE email_verifications, tasks, users RESTART IDENTITY CASCADE"
+  );
 });
 
 afterAll(async () => {

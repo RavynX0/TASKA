@@ -34,9 +34,10 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
           aria-hidden="true"
         />
       )}
-      {/* Fixed (not scroll-flow) on every breakpoint, so it never moves with page scroll. */}
+      {/* Floating squircle on every breakpoint - detached from the screen edges
+          with a 40px corner radius, fixed so it never moves with page scroll. */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 -translate-x-full flex-col bg-white px-5 py-6 shadow-sm transition-transform duration-200 lg:inset-y-auto lg:left-4 lg:top-4 lg:bottom-4 lg:h-auto lg:w-60 lg:translate-x-0 lg:rounded-[50px] lg:px-7 lg:py-8 ${
+        className={`fixed inset-y-3 left-3 z-50 flex w-[270px] max-w-[calc(100vw-1.5rem)] shrink-0 -translate-x-[calc(100%+1.5rem)] flex-col overflow-y-auto rounded-[20px] bg-white px-6 py-7 shadow-lg transition-transform duration-200 lg:inset-y-4 lg:left-4 lg:w-60 lg:translate-x-0 lg:px-7 lg:py-8 ${
           open ? "translate-x-0" : ""
         }`}
       >
