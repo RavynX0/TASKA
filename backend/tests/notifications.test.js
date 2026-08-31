@@ -2,12 +2,11 @@ const request = require("supertest");
 const app = require("../src/app");
 const db = require("../src/config/db");
 const { processDueReminders } = require("../src/jobs/reminderScheduler");
+const { registerAndVerify } = require("./helpers");
 
 async function registerUser(email) {
-  const res = await request(app)
-    .post("/auth/register")
-    .send({ name: "User", email, password: "password123" });
-  return { token: res.body.token, id: res.body.user.id };
+  const { token, id } = await registerAndVerify({ email });
+  return { token, id };
 }
 
 // Insert a task straight into the DB with precise timestamps - the API clamps

@@ -1,11 +1,10 @@
 const request = require("supertest");
 const app = require("../src/app");
+const { registerAndVerify } = require("./helpers");
 
 async function registerAndLogin(email) {
-  const res = await request(app)
-    .post("/auth/register")
-    .send({ name: "User", email, password: "password123" });
-  return res.body.token;
+  const { token } = await registerAndVerify({ email });
+  return token;
 }
 
 describe("Tasks", () => {
