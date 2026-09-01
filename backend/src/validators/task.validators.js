@@ -3,6 +3,8 @@ const AppError = require("../utils/AppError");
 const STATUS_VALUES = ["pending", "in_progress", "completed"];
 const PRIORITY_VALUES = ["low", "medium", "high"];
 const REMINDER_MINUTES_VALUES = [0, 5, 10, 15, 30, 60];
+const TITLE_MAX = 100;
+const DESCRIPTION_MAX = 500;
 
 function isValidDate(value) {
   return !Number.isNaN(new Date(value).getTime());
@@ -22,13 +24,15 @@ function validateCreateTask(req, res, next) {
   const errors = [];
 
   if (!title || typeof title !== "string" || title.trim().length === 0) {
-    errors.push("title is required");
-  } else if (title.length > 200) {
-    errors.push("title must be 200 characters or fewer");
+    errors.push("Task title is required.");
+  } else if (title.trim().length > TITLE_MAX) {
+    errors.push(`Task title must be ${TITLE_MAX} characters or less.`);
   }
 
-  if (description !== undefined && typeof description !== "string") {
+  if (description !== undefined && description !== null && typeof description !== "string") {
     errors.push("description must be a string");
+  } else if (typeof description === "string" && description.trim().length > DESCRIPTION_MAX) {
+    errors.push(`Description must be ${DESCRIPTION_MAX} characters or less.`);
   }
 
   if (status !== undefined && !STATUS_VALUES.includes(status)) {
@@ -76,13 +80,15 @@ function validateUpdateTask(req, res, next) {
   const errors = [];
 
   if (title !== undefined && (typeof title !== "string" || title.trim().length === 0)) {
-    errors.push("title must be a non-empty string");
+    errors.push("Task title is required.");
   }
-  if (title !== undefined && title.length > 200) {
-    errors.push("title must be 200 characters or fewer");
+  if (title !== undefined && typeof title === "string" && title.trim().length > TITLE_MAX) {
+    errors.push(`Task title must be ${TITLE_MAX} characters or less.`);
   }
   if (description !== undefined && description !== null && typeof description !== "string") {
     errors.push("description must be a string");
+  } else if (typeof description === "string" && description.trim().length > DESCRIPTION_MAX) {
+    errors.push(`Description must be ${DESCRIPTION_MAX} characters or less.`);
   }
   if (status !== undefined && !STATUS_VALUES.includes(status)) {
     errors.push(`status must be one of: ${STATUS_VALUES.join(", ")}`);

@@ -8,7 +8,7 @@ const createTask = asyncHandler(async (req, res) => {
   const task = await taskModel.createTask({
     userId: req.user.id,
     title: title.trim(),
-    description,
+    description: typeof description === "string" ? description.trim() || null : description,
     status,
     priority,
     dueDate,
@@ -71,7 +71,12 @@ const updateTask = asyncHandler(async (req, res) => {
 
   const task = await taskModel.updateForUser(req.params.id, req.user.id, {
     title: title !== undefined ? title.trim() : undefined,
-    description,
+    description:
+      description === undefined
+        ? undefined
+        : typeof description === "string"
+          ? description.trim() || null
+          : description,
     status,
     priority,
     due_date: dueDate,
