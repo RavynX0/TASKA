@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Modal from "../ui/Modal";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 import Select from "../ui/Select";
 import ErrorBanner from "../ui/ErrorBanner";
+import ConfirmDialog from "../ui/ConfirmDialog";
 import { useTasks } from "../../context/TasksContext";
 import { useNotifications } from "../../context/NotificationsContext";
 import { REMINDER_OPTIONS } from "../../utils/reminders";
@@ -15,6 +16,41 @@ const PRIORITY_OPTIONS = [
   { value: "medium", label: "Medium" },
   { value: "high", label: "High" },
 ];
+
+const TITLE_MAX = 100;
+const DESCRIPTION_MAX = 500;
+
+// Surface the backend's per-field validation reasons instead of a bare
+// "Validation failed".
+function errorText(err) {
+  if (err?.details?.length) return `${err.message}: ${err.details.join(", ")}`;
+  return err?.message || "Something went wrong. Please try again.";
+}
+
+// Per-field checks, evaluated on every keystroke so errors can surface inline
+// as the user moves through the form (not just on submit).
+function validateForm(form) {
+  const e = {};
+  const title = form.title.trim();
+  if (!title) e.title = "Title is required";
+  else if (title.length > TITLE_MAX) e.title = `Task title must be ${TITLE_MAX} characters or less.`;
+
+  if (form.description.trim().length > DESCRIPTION_MAX) {
+    e.description = `Description must be ${DESCRIPTION_MAX} characters or less.`;
+  }
+
+  if (!form.priority) e.priority = "Choose a priority";
+  if (!form.status) e.status = "Choose a status";
+
+  if (
+    form.plannedStart &&
+    form.dueDate &&
+    new Date(form.dueDate) < new Date(form.plannedStart)
+  ) {
+    e.dueDate = "The due date can't be before the planned time";
+  }
+  return e;
+}
 
 function toDateTimeLocal(value) {
   if (!value) return "";
@@ -92,6 +128,15 @@ export default function TaskFormModal() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [touched, setTouched] = useState({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const fieldErrors = useMemo(() => validateForm(form), [form]);
+  // Show a field's error once the user has left it, or after a submit attempt.
+  const errFor = (field) =>
+    (touched[field] || submitAttempted) && fieldErrors[field] ? fieldErrors[field] : undefined;
+  const markTouched = (field) => setTouched((t) => ({ ...t, [field]: true }));
 
   // Tick the countdown once a minute while the modal is open.
   useEffect(() => {
@@ -104,6 +149,9 @@ export default function TaskFormModal() {
   useEffect(() => {
     if (modal.open) {
       setError(null);
+      setTouched({});
+      setSubmitAttempted(false);
+      setConfirmDelete(false);
       setForm(
         modal.task
           ? {
@@ -131,27 +179,16 @@ export default function TaskFormModal() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.title.trim()) {
-      setError("Title is required");
-      return;
-    }
-    if (!form.priority) {
-      setError("Choose a priority");
-      return;
-    }
-    if (!form.status) {
-      setError("Choose a status");
-      return;
-    }
-    if (form.plannedStart && form.dueDate && new Date(form.dueDate) < new Date(form.plannedStart)) {
-      setError("The due date can't be before the planned time");
+    setSubmitAttempted(true);
+    if (Object.keys(fieldErrors).length > 0) {
+      setError(null);
       return;
     }
     setSaving(true);
     setError(null);
     const payload = {
       title: form.title.trim(),
-      description: form.description || undefined,
+      description: form.description.trim() || undefined,
       status: form.status,
       priority: form.priority,
       dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
@@ -171,25 +208,27 @@ export default function TaskFormModal() {
       }
       closeModal();
     } catch (err) {
-      setError(err.message);
+      setError(errorText(err));
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete() {
+    if (deleting) return; // guard against a double confirm
     setDeleting(true);
     setError(null);
     try {
       await removeTask(modal.task.id);
       closeModal();
     } catch (err) {
-      setError(err.message);
+      setError(errorText(err));
       setDeleting(false);
     }
   }
 
   return (
+    <>
     <Modal open={modal.open} onClose={closeModal} title={isEdit ? "Edit Task" : "New Task"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <ErrorBanner message={error} />
@@ -199,20 +238,48 @@ export default function TaskFormModal() {
               Title <span className="text-red-500">*</span>
             </>
           }
+          labelAction={
+            <span
+              className={`text-xs ${
+                form.title.length >= TITLE_MAX ? "text-red-500" : "text-ink-faint"
+              }`}
+            >
+              {form.title.length}/{TITLE_MAX}
+            </span>
+          }
           name="title"
           placeholder="e.g. Finalize project presentation"
           value={form.title}
           onChange={(e) => set("title", e.target.value)}
+          onBlur={() => markTouched("title")}
+          maxLength={TITLE_MAX}
+          error={errFor("title")}
           autoFocus
         />
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-ink">Description</label>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label className="block text-sm font-medium text-ink">Description</label>
+            <span
+              className={`text-xs ${
+                form.description.length >= DESCRIPTION_MAX ? "text-red-500" : "text-ink-faint"
+              }`}
+            >
+              {form.description.length}/{DESCRIPTION_MAX}
+            </span>
+          </div>
           <textarea
-            className="min-h-[80px] w-full rounded-control border border-border-soft bg-white px-3.5 py-2.5 text-[15px] text-ink outline-none focus:border-primary"
+            className={`min-h-[80px] w-full rounded-control border bg-white px-3.5 py-2.5 text-[15px] text-ink outline-none focus:border-primary ${
+              errFor("description") ? "border-red-400" : "border-border-soft"
+            }`}
             placeholder="Add more detail (optional)"
             value={form.description}
             onChange={(e) => set("description", e.target.value)}
+            onBlur={() => markTouched("description")}
+            maxLength={DESCRIPTION_MAX}
           />
+          {errFor("description") && (
+            <p className="mt-1 text-xs text-red-500">{errFor("description")}</p>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -224,9 +291,15 @@ export default function TaskFormModal() {
               aria-label="Priority"
               placeholder="Choose priority"
               value={form.priority}
-              onChange={(v) => set("priority", v)}
+              onChange={(v) => {
+                set("priority", v);
+                markTouched("priority");
+              }}
               options={PRIORITY_OPTIONS}
             />
+            {errFor("priority") && (
+              <p className="mt-1 text-xs text-red-500">{errFor("priority")}</p>
+            )}
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink">
@@ -237,9 +310,15 @@ export default function TaskFormModal() {
               aria-label="Status"
               placeholder="Choose status"
               value={form.status}
-              onChange={(v) => set("status", v)}
+              onChange={(v) => {
+                set("status", v);
+                markTouched("status");
+              }}
               options={STATUS_OPTIONS}
             />
+            {errFor("status") && (
+              <p className="mt-1 text-xs text-red-500">{errFor("status")}</p>
+            )}
           </div>
         </div>
         <div className="space-y-4 rounded-control border border-border-soft bg-canvas/60 p-4">
@@ -251,6 +330,7 @@ export default function TaskFormModal() {
               type="datetime-local"
               value={form.plannedStart}
               onChange={(e) => set("plannedStart", e.target.value)}
+              onBlur={() => markTouched("dueDate")}
             />
           </div>
           <div>
@@ -260,6 +340,8 @@ export default function TaskFormModal() {
               type="datetime-local"
               value={form.dueDate}
               onChange={(e) => set("dueDate", e.target.value)}
+              onBlur={() => markTouched("dueDate")}
+              error={errFor("dueDate")}
             />
           </div>
           <div>
@@ -308,7 +390,7 @@ export default function TaskFormModal() {
               type="button"
               variant="ghost"
               className="text-red-500 hover:bg-red-50"
-              onClick={handleDelete}
+              onClick={() => setConfirmDelete(true)}
               loading={deleting}
             >
               Delete
@@ -327,5 +409,16 @@ export default function TaskFormModal() {
         </div>
       </form>
     </Modal>
+
+    <ConfirmDialog
+      open={confirmDelete}
+      onClose={() => setConfirmDelete(false)}
+      onConfirm={handleDelete}
+      title="Delete this task?"
+      message="Are you sure you want to delete this task? This action cannot be undone."
+      confirmLabel="Delete Task"
+      destructive
+    />
+    </>
   );
 }
