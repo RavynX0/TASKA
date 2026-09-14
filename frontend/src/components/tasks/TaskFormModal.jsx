@@ -149,6 +149,7 @@ export default function TaskFormModal() {
   useEffect(() => {
     if (modal.open) {
       setError(null);
+      setDeleting(false);
       setTouched({});
       setSubmitAttempted(false);
       setConfirmDelete(false);
@@ -223,6 +224,7 @@ export default function TaskFormModal() {
       closeModal();
     } catch (err) {
       setError(errorText(err));
+    } finally {
       setDeleting(false);
     }
   }
