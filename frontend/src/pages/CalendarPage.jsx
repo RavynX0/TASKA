@@ -120,7 +120,7 @@ export default function CalendarPage() {
                 <button
                   key={date.toISOString()}
                   onClick={() => setSelectedDate(date)}
-                  className={`flex min-h-[76px] flex-col items-start gap-1 rounded-lg border p-1.5 text-left transition-colors ${
+                  className={`flex min-h-[76px] min-w-0 flex-col items-start gap-1 rounded-lg border p-1.5 text-left transition-colors ${
                     isSelected
                       ? "border-primary bg-primary-soft/40"
                       : "border-transparent hover:bg-canvas"
@@ -133,7 +133,7 @@ export default function CalendarPage() {
                   >
                     {date.getDate()}
                   </span>
-                  <div className="flex w-full flex-col gap-0.5">
+                  <div className="flex w-full min-w-0 flex-col gap-0.5">
                     {dayTasks.slice(0, 2).map((t) => (
                       <span
                         key={t.id}
@@ -173,12 +173,12 @@ export default function CalendarPage() {
                       task.priority === "high" ? "bg-primary" : "bg-gray-300"
                     }`}
                   />
-                  <button onClick={() => openEditModal(task)} className="flex-1 text-left">
+                  <button onClick={() => openEditModal(task)} className="min-w-0 flex-1 text-left">
                     <p className="flex items-center gap-1.5 text-xs font-medium text-ink-muted">
                       <ClockIcon size={12} />
                       {formatTime(task.due_date)}
                     </p>
-                    <p className="text-sm font-semibold text-ink">{task.title}</p>
+                    <p className="[overflow-wrap:anywhere] text-sm font-semibold text-ink">{task.title}</p>
                     <span className="mt-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium capitalize text-ink-muted">
                       {STATUS_LABEL[task.status] || task.status}
                     </span>

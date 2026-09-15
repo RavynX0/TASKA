@@ -120,7 +120,7 @@ export default function PlanMyDay() {
                 >
                   <GripIcon size={15} className="mt-0.5 shrink-0 text-ink-faint" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-ink">{task.title}</p>
+                    <p className="[overflow-wrap:anywhere] text-sm font-semibold text-ink">{task.title}</p>
                     <PriorityBadge priority={task.priority} className="mt-1" />
                   </div>
                 </div>
@@ -167,12 +167,12 @@ export default function PlanMyDay() {
                           draggable
                           onDragStart={() => setDragTaskId(task.id)}
                           onClick={() => openEditModal(task)}
-                          className={`flex cursor-grab items-center justify-between rounded-lg px-3 py-2.5 active:cursor-grabbing ${
+                          className={`flex min-w-0 cursor-grab items-center justify-between gap-2 rounded-lg px-3 py-2.5 active:cursor-grabbing ${
                             task.priority === "high" ? "bg-primary-soft" : "bg-canvas"
                           }`}
                         >
-                          <span className="truncate text-sm font-semibold text-ink">{task.title}</span>
-                          <PriorityBadge priority={task.priority} />
+                          <span className="min-w-0 flex-1 [overflow-wrap:anywhere] text-sm font-semibold text-ink">{task.title}</span>
+                          <PriorityBadge priority={task.priority} className="shrink-0" />
                         </div>
                       ))}
                     </div>

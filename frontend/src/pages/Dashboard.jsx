@@ -77,19 +77,19 @@ export default function Dashboard() {
                   </span>
                 )}
               </div>
-              <h3 className="max-w-md text-xl font-bold">{nextUp.title}</h3>
+              <h3 className="max-w-md [overflow-wrap:anywhere] text-xl font-bold">{nextUp.title}</h3>
               {nextUp.description && (
-                <p className="mt-1 max-w-md text-sm text-white/60">{nextUp.description}</p>
+                <p className="mt-1 max-w-md [overflow-wrap:anywhere] text-sm text-white/60">{nextUp.description}</p>
               )}
               {(nextUp.planned_start || nextUp.due_date) && (
                 <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-white/70">
                   {nextUp.planned_start && (
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex min-w-0 items-center gap-1.5 [overflow-wrap:anywhere]">
                       <ClockIcon size={15} /> Planned: {formatPlanned(nextUp.planned_start)}
                     </span>
                   )}
                   {nextUp.due_date && (
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex min-w-0 items-center gap-1.5 [overflow-wrap:anywhere]">
                       <CalendarIcon size={15} /> Due: {formatDay(nextUp.due_date)}
                     </span>
                   )}
@@ -183,10 +183,10 @@ export default function Dashboard() {
                       </span>
                       <button
                         onClick={() => openEditModal(task)}
-                        className="flex-1 text-left"
+                        className="min-w-0 flex-1 text-left"
                       >
                         <p className="text-xs font-medium text-ink-muted">{formatTime(task.due_date)}</p>
-                        <p className="text-sm font-semibold text-ink">{task.title}</p>
+                        <p className="[overflow-wrap:anywhere] text-sm font-semibold text-ink">{task.title}</p>
                       </button>
                     </li>
                   ))}

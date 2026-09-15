@@ -56,9 +56,9 @@ export default function Reminders() {
                 <button
                   key={task.id}
                   onClick={() => openEditModal(task)}
-                  className="flex w-full flex-col items-start gap-2 rounded-card bg-white p-5 text-left shadow-sm"
+                  className="flex w-full min-w-0 flex-col items-start gap-2 rounded-card bg-white p-5 text-left shadow-sm"
                 >
-                  <div className="flex w-full items-start gap-3">
+                  <div className="flex w-full min-w-0 items-start gap-3">
                     <span
                       onClick={(e) => {
                         e.stopPropagation();
@@ -69,13 +69,13 @@ export default function Reminders() {
                       className="mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 border-gray-300"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[15px] font-semibold text-ink">{task.title}</p>
+                      <p className="[overflow-wrap:anywhere] text-[15px] font-semibold text-ink">{task.title}</p>
                       {task.description && (
-                        <p className="mt-0.5 text-sm text-ink-muted">{task.description}</p>
+                        <p className="mt-0.5 [overflow-wrap:anywhere] text-sm text-ink-muted">{task.description}</p>
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 pl-8">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2 pl-8">
                     {formatTime(task.due_date) && (
                       <span className="rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary">
                         {formatTime(task.due_date)}
@@ -114,7 +114,7 @@ export default function Reminders() {
                     <span className="w-16 shrink-0 text-xs text-ink-muted">
                       {formatTime(task.due_date)}
                     </span>
-                    <span className="truncate text-sm font-medium text-ink">{task.title}</span>
+                    <span className="min-w-0 flex-1 [overflow-wrap:anywhere] text-sm font-medium text-ink">{task.title}</span>
                   </button>
                 ))}
               </div>
@@ -144,7 +144,7 @@ export default function Reminders() {
                         </span>
                         <span className="text-sm font-bold text-ink">{date.getDate()}</span>
                       </span>
-                      <span className="truncate text-sm font-medium text-ink">{task.title}</span>
+                      <span className="min-w-0 flex-1 [overflow-wrap:anywhere] text-sm font-medium text-ink">{task.title}</span>
                     </button>
                   );
                 })}
